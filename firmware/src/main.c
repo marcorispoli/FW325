@@ -56,9 +56,9 @@ int main ( void )
     
     // ADC Initialization
     ADC0_Enable();
-    ADC0_ConversionStart();
-    ADC1_Enable();    
-    ADC1_ConversionStart();    
+    
+    //ADC1_Enable();    
+    //ADC1_ConversionStart();    
     // ADC conversion functions
     // ADC0_ConversionResultGet()
     // ADC1_ConversionResultGet()
@@ -84,7 +84,7 @@ int main ( void )
     
         if(trigger_time & _1024_ms_TriggerTime){
             trigger_time &=~ _1024_ms_TriggerTime;            
-            
+            motor1sLoop();
             VITALITY_LED_Toggle(); 
         }        
  

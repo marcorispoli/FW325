@@ -149,6 +149,8 @@ void SYS_Initialize ( void* data )
 
     TC4_CompareInitialize();
 
+    ADC0_Initialize();
+    ADC1_Initialize();
 
 
 
