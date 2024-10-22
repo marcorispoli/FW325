@@ -1,0 +1,11 @@
+
+*.cof
+*.o
+*.d
+*.err
+*.lst
+firmware/doc/html/**
+firmware/FW303.X/build/**
+firmware/FW303.X/debug/**
+firmware/FW303.X/dist/**
+firmware/FW303.X/.generated_files/**

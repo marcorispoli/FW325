@@ -1,0 +1,10 @@
+*.bin -text
+*.mc3 -text
+*.mk -text
+*.yml -text 
+*.a -text
+*.d -text
+*.o -text
+*.d -text
+*.png -text
+

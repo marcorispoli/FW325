@@ -1,0 +1,43 @@
+h1 {
+ 	font-size:1.2em; 
+	font-style:normal;
+	font-weight:normal, bold;
+	text-transform: uppercase;
+	text-decoration: none;
+	color: Blue;
+}
+h2 { 
+ 	font-size:1em; 
+	font-style:normal;
+	font-weight:normal, bold;
+	text-transform: capitalize;
+	text-decoration: none;
+	color: Blue;
+}
+h3 {
+ 	font-size:1em; 
+	font-style:italic;
+	font-weight:lighter, bold;
+	text-transform: capitalize;
+	text-decoration: none;
+	color: Blue
+}
+
+h4 {
+ 	font-size:1em; 
+	font-style:italic;
+	font-weight:none;
+	text-transform: none;
+	text-decoration: none
+	color: Black
+}
+
+p {
+ 	
+ 	font-size:1em; 
+	font-style:normal;
+	font-weight:none;
+	text-transform: none;
+	text-decoration: none;
+	color: Black
+}

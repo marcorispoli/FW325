@@ -1,0 +1,14 @@
+format_version: v1.0
+configName: default
+folderName: FW303
+frameworkPath: C:\Users\marco\Harmony3
+processor: ATSAME51J20A
+projectName: FW303
+settings:
+  PackageFilter: ''
+  FORCE_OPTIMIZATION: 'false'
+  GENERATE_BACKUP: 'true'
+  TRUSTZONE: 'false'
+  CMSISPath: dev_packs\arm\CMSIS\5.7.0
+  MERGE_STRATEGY: USER_ALL
+  DFPPath: dev_packs\Microchip\SAME51_DFP\3.4.98\atdf\ATSAME51J20A.atdf
