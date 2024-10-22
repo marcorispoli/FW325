@@ -6,6 +6,7 @@
 
 #include "application.h"
 #include "Protocol/protocol.h"
+#include "Motors/motors.h"
 
 
  /** 
@@ -54,37 +55,23 @@ int main ( void )
     ApplicationProtocolInit();
     
     // ADC Initialization
-    //ADC0_Enable();
-    //ADC0_ConversionStart();
-    //ADC1_Enable();    
-    //ADC1_ConversionStart();    
+    ADC0_Enable();
+    ADC0_ConversionStart();
+    ADC1_Enable();    
+    ADC1_ConversionStart();    
     // ADC conversion functions
     // ADC0_ConversionResultGet()
     // ADC1_ConversionResultGet()
     
     // Initializes the motors with the common routines
     
-    // Impostazione Tensione Motori
-    uc_VSEL0_Clear();
-    uc_VSEL1_Set();
-    uc_VSEL2_Set();
-    
-    // Abilitazione Generale
-    uc_MOTOR_GENERAL_ENABLE_Clear();    
-    uc_BUTTON_ENA_Clear();
-    
-    // Enable motori
-    uc_DRIVER_ENA_Set();    
-    uc_ENABLE_B_Clear();
-    uc_ENABLE_A_Set();
-    
-    // Configurazione Motori
-    uc_MOT_STOP_Set();
-    uc_MOT_DIR_Set();
+   
     
     // Controllo LED
     uc_LAMP_ON_Set();
     uc_DIMM_Clear();
+    
+    motorInit();
     
     while ( true )
     {
@@ -104,7 +91,7 @@ int main ( void )
         // Timer events activated into the RTC interrupt
         if(trigger_time & _7820_us_TriggerTime){
             trigger_time &=~ _7820_us_TriggerTime;
-            
+            motorLoop();
         }
 
         if(trigger_time & _15_64_ms_TriggerTime){
