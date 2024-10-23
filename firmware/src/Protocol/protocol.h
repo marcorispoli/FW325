@@ -16,15 +16,19 @@
     #define ext_static extern
 #endif
 
+ /*!
+  * \defgroup CANPROT CAN Communication Protocol Module
+  * \ingroup applicationModule
+  * 
+  * This Module implements the functions of the PCB/23-325 Software Communication protocol specifications.
+  * 
+  */
 
+
+ 
 
 /*!
- * \defgroup protocolModule CAN Communication Protocol Module
- *
- * \ingroup applicationModule
- * 
- * 
- * This Module implements the functions of the PCB/22-303 Software Communication protocol specifications.
+ * \addtogroup CANPROT 
  * 
  * ## Dependencies
  * 
@@ -36,164 +40,247 @@
  * ## Protocol Communication setting
  *  
  * The Application implements the communication protocol  
- * described in the PCB/22-303 Software Communication protocol specifications.
- * 
- *  @{
+ * described in the PCB/23-325 Software Communication protocol specifications.
  * 
  */
 
-    /**
-     * \defgroup moduleConstants Constants module definition
-     * 
-     * This section describes the module constants
-     * 
-     *  @{
-     */
-        // Can Module Definitions
-        static const unsigned char   MET_CAN_APP_DEVICE_ID    =  0x15 ;     //!< Application DEVICE CAN Id address
-        static const unsigned char   MET_CAN_STATUS_REGISTERS =  2 ;        //!< Defines the total number of implemented STATUS registers 
-        static const unsigned char   MET_CAN_DATA_REGISTERS   =  0 ;        //!< Defines the total number of implemented Application DATA registers 
-        static const unsigned char   MET_CAN_PARAM_REGISTERS  =  0 ;       //!< Defines the total number of implemented PARAMETER registers 
-
-     /// @}   moduleConstants
-
-    /**
-     * \defgroup moduleApiInterface CAN Protocol API interface
-     * 
-     * This section describes the functions implementing the Protocol module.
-     * 
-     *  @{
-     */
-        /// This is the Protocol initialization function
-        ext void ApplicationProtocolInit ( void);
-
-        /// This is the Main Loop protocol function
-        ext void  ApplicationProtocolLoop(void);
-
-     /// @}   moduleApiInterface
+/// \ingroup CANPROT 
+/// This structure is used as a template type to cast a status register  
+typedef struct {
+    unsigned char idx;
+    unsigned char d0;
+    unsigned char d1;
+    unsigned char d2;
+    unsigned char d3;
+}GENERIC_STATUS_t;
     
+/**
+ * \addtogroup CANPROT 
+ * 
+ * ## Protocol Setting
+ * 
+ * Can ID address: \ref MET_CAN_APP_DEVICE_ID  
+ * Number of STATUS registers: MET_CAN_STATUS_REGISTERS
+ * Number of DATA registers: MET_CAN_DATA_REGISTERS
+ * Number of PARAM registers: MET_CAN_PARAM_REGISTERS
+ * 
+ */ 
 
-     /** \defgroup ErrorRegisterGroup ERROR REGISTER Definition
-     *  
-     *  This section describes the implementation of the Protocol Error Register
-     *  @{
-     */
+/// \ingroup CANPROT 
+/// Protocol Definition Data
+typedef enum{
+    MET_CAN_APP_DEVICE_ID    =  0x15,      //!< Application DEVICE CAN Id address
+    MET_CAN_STATUS_REGISTERS =  3,        //!< Defines the total number of implemented STATUS registers 
+    MET_CAN_DATA_REGISTERS   =  0,        //!< Defines the total number of implemented Application DATA registers 
+    MET_CAN_PARAM_REGISTERS  =  0       //!< Defines the total number of implemented PARAMETER registers 
+}PROTOCOL_DEFINITION_DATA_t;
 
-       
+/**
+ * \addtogroup CANPROT
+ * 
+ * ## Application API
+ * 
+ * + ApplicationProtocolInit() : this is the module initialization;
+ * + ApplicationProtocolLoop() : this is the workflow routine to be placed into the application main loop;
+ * + updateStatusRegister() : this is the function to be called to update a given status register 
+ * 
+ */
 
 
-        
-    /// @}   ErrorRegisterGroup
-    
-       
-    /** \defgroup StatusRegisterGroup STATUS REGISTERS Definition
-     *  
-     *  This section describes the implementation of the Application STATUS Registers 
-     *  @{
-     */
-        
+/**
+ * \ingroup CANPROT 
+ * Protocol Initialization routine
+ */
+ext void ApplicationProtocolInit ( void);
 
-    typedef struct {
-        unsigned char idx;
-        unsigned char d0;
-        unsigned char d1;
-        unsigned char d2;
-        unsigned char d3;
+/// \ingroup CANPROT 
+/// This is the Main Loop protocol function
+ext void  ApplicationProtocolLoop(void);
 
-    }GENERIC_STATUS_t;
-    
+/// \ingroup CANPROT 
+/// This is the function to update a Status register
+ext void updateStatusRegister(void* reg);
+
+/**
+ * \addtogroup CANPROT
+ * 
+ * ## STATUS register description
+ * 
+ * There are the following Status registers:
+ * 
+ * |IDX|NAME|DESCRIPTION|
+ * |:--|:--|:--|
+ * |0|Mode Register|\ref STATUS_MODE_t|
+ * |1|Position XY Register|\ref STATUS_XY_POSITION_t|
+ * |2|Position Z Register|\ref STATUS_Z_POSITION_t|
+ *   
+ */
+
+    /// \ingroup CANPROT
+    /// Defines the address table for the System Registers 
     typedef enum{
-        DISABLE_MODE = 0,
-        CALIB_MODE,
-        COMMAND_MODE,    
-        SERVICE_MODE
+      STATUS_MODE_IDX = 0, //!< Status Mode  
+      STATUS_XY_POSITION_IDX = 1,//!< Status Position for the X and Y coordinate 
+      STATUS_Z_POSITION_IDX = 2,//!< Status Position for the Z coordinate 
+    }STATUS_INDEX_t;
+
+    /**
+     * This is the enumeration type describing the current workflow code value.
+     */
+    typedef enum{
+        DISABLE_MODE = 0,   //!< This is the Disabled Mode 
+        CALIB_MODE,         //!< This is the Calibration Mode 
+        COMMAND_MODE,       //!< This is the Command Mode 
+        SERVICE_MODE        //!< This is the Service Mode 
     }STATUS_WORKING_MODE_t;
         
-    /// This is the list of the implemented DATA REGISTERS    
+    
+    
+    /**
+     * \addtogroup CANPROT
+     * 
+     * ### MODE STATUS REGISTER
+     * 
+     * + Description: STATUS_MODE_t;
+     * + IDX: \ref STATUS_MODE_IDX;
+     * 
+     * |BYTE.BIT|NAME|DESCRIPTION|
+     * |:--|:--|:--|
+     * |0|MODE|This is the current Working mode \ref STATUS_WORKING_MODE_t|
+     * |1.0|General Enable|Status of the general enable switch|
+     * |1.1|Keyboard Enable|Status of the keyboard enable switch|
+     * |1.2|status of the power switch|
+     * |1.3|status of the needle disable signal|
+     * |2|-|-|
+     * |3|-|-|
+     * 
+     */ 
+
+    /// \ingroup CANPROT
+    /// Status Mode description structure
     typedef struct {
-        const unsigned char idx;
+        const unsigned char idx; //!< Address constant 
 
-        unsigned char mode;
+        unsigned char mode; //!< workflow mode code (see  STATUS_WORKING_MODE_t) at byte 0
 
-        unsigned char general_enable:1;
-        unsigned char keyboard_enable:1;
-        unsigned char enable_feedback:1;
-        unsigned char disable_needle_feedback:1;
-        unsigned char d1:4;
+        unsigned char general_enable:1; //!< General enable status at byte 1.0 
+        unsigned char keyboard_enable:1;//!< Keyboard enable status at byte 1.1 
+        unsigned char enable_feedback:1;//!< Current power switch status at byte 1.2 
+        unsigned char disable_needle_feedback:1;//!< Current disable needle status at byte 1.3 
+        unsigned char d1:4;//!< Spare bits at the byte 1.4 to 1.7
 
-        unsigned char d2;
+        unsigned char d2;//!< Spare byte 2
 
-        unsigned char d3;    
+        unsigned char d3;//!< Spare byte 3
     }STATUS_MODE_t;
     
-    /// This is the list of the implemented DATA REGISTERS    
+     /**
+     * \addtogroup CANPROT
+     * 
+     * ### POSITION XY STATUS REGISTER
+     * 
+     * + Description: STATUS_XY_POSITION_t;
+     * + IDX: \ref STATUS_XY_POSITION_IDX;
+     * 
+     * The structure of the XY POSITION register is the following:
+     * 
+     * |BYTE.BIT|NAME|DESCRIPTION|
+     * |:--|:--|:--|
+     * |0|XL|Low byte of the 16 bit X coordinate|
+     * |1|XH|High byte of the 16 bit X coordinate|
+     * |2|YL|Low byte of the 16 bit Y coordinate|
+     * |3|YH|High byte of the 16 bit Y coordinate|
+     * 
+     * + Position X = XL + 256 * XH: is expressed in 0.1 mm units
+     * + Position Y = YL + 256 * YH: is expressed in 0.1 mm units
+     */ 
+    
+    /// \ingroup CANPROT
+    /// Status XY Position description structure
     typedef struct {
         const unsigned char idx;
-        unsigned char xl;
-        unsigned char xh;                
-        unsigned char y;
-        unsigned char z;    
-    }STATUS_POSITION_t;
-    ext void updateStatusRegister(void* reg);
+        unsigned char xl; //!< Low byte of the X Position 
+        unsigned char xh; //!< High byte of the X Position 
+        unsigned char yl; //!< Low byte of the Y Position
+        unsigned char yh; //!< High byte of the Y Position
+    }STATUS_XY_POSITION_t;
     
-    // Declaration of the status registers global data   
+    /**
+     * \addtogroup CANPROT
+     * 
+     * ### POSITION Z STATUS REGISTER
+     * 
+     * + Description: STATUS_Z_POSITION_t;
+     * + IDX: \ref STATUS_Z_POSITION_IDX;
+     * 
+     * The structure of the Z POSITION register is the following:
+     * 
+     * |BYTE.BIT|NAME|DESCRIPTION|
+     * |:--|:--|:--|
+     * |0|ZL|Low byte of the 16 bit X coordinate|
+     * |1|ZH|High byte of the 16 bit X coordinate|
+     * |2|-|-|
+     * |3|-|-|
+     * 
+     * + Position Z = ZL + 256 * ZH: is expressed in 0.1 mm units
+     */ 
+    
+    
+    /// \ingroup CANPROT
+    /// Status Z Position description structure
+    typedef struct {
+        const unsigned char idx;
+        unsigned char zl; //!< Low byte of the Z Position
+        unsigned char zh; //!< High byte of the Z Position
+        unsigned char d2;  
+        unsigned char d3;  
+    }STATUS_Z_POSITION_t;
+    
+    
+    
+    
     #ifdef _PROTOCOL_C
-        STATUS_MODE_t StatusModeRegister = {.idx=0};
-        STATUS_POSITION_t StatusPositionRegister = {.idx=1};
+        /// \ingroup CANPROT
+        /// Declaration of the Status Mode Register  global variables
+        STATUS_MODE_t StatusModeRegister = {.idx=STATUS_MODE_IDX};
+
+        /// \ingroup CANPROT
+        /// Declaration of the Status XY Position Register  global variables
+        STATUS_XY_POSITION_t StatusPositionRegister = {.idx=STATUS_XY_POSITION_IDX};
+        
+        /// \ingroup CANPROT
+        /// Declaration of the Status Z Position Register  global variables
+        STATUS_Z_POSITION_t StatusPositionRegister = {.idx=STATUS_Z_POSITION_IDX};
     #else
         extern STATUS_MODE_t StatusModeRegister;
-        extern STATUS_POSITION_t StatusPositionRegister;
+        extern STATUS_XY_POSITION_t StatusPositionRegister;
+        extern STATUS_Z_POSITION_t StatusPositionRegister;
     #endif  
     
     
-     /// @}   StatusRegisterGroup
+    /**
+     * \addtogroup CANPROT
+     * 
+     * ## PROTOCOL COMMANDS DESCRIPTION
+     * 
+     * See \ref PROTOCOL_COMMANDS_t
+     */     
 
-     
-    /** \defgroup DataRegisterGroup DATA REGISTERS Definition
-     *  
-     *  This section describes the implementation of the Protocol DATA Registers 
-     *  @{
-     */
-        
-        
-    /// @}   DataRegisterGroup
-
-    /** \defgroup ParamRegisterGroup PARAMETER Registers Definition
-     *  
-     *  This section describes the implementation of the Application PARAMETER Registers 
-     *  @{
-     */
-             
-        
-         
-    /// @}   ParamRegisterGroup
-        
-        
-     /** \defgroup CommandGroup COMMAND Execution Definition
-     *  
-     *  This section describes the Application Command Execution codes
-     *  @{
-     */
-        
+    /// \ingroup CANPROT
     /// This is the list of the implemented COMMANDS
-    
-    
-    /// This is the list of the implemented ERRORS
     typedef enum{
        CMD_ABORT = 0,           //!< Abort Command
-       CMD_DISABLE_MODE,
-       CMD_COMMAND_MODE,
-       CMD_SERVICE_MODE,
-       CMD_CALIB_MODE,
-       CMD_MOVE_XYZ,                //!< Moves to an XYZ position
-       CMD_SERVICE_TEST_CYCLE   //!< Cycle Test     
+       CMD_DISABLE_MODE = 1,        //!< Disable Mode Activation Command
+       CMD_COMMAND_MODE = 2,        //!< Command Mode Activation Command
+       CMD_SERVICE_MODE = 3,        //!< Service Mode Activation Command
+       CMD_CALIB_MODE = 4,          //!< Calibration Mode Activation Command
+       CMD_MOVE_XYZ = 5,            //!< Moves to an XYZ position command
+       CMD_SERVICE_TEST_CYCLE = 6   //!< Service Cycle Test activatioin command    
     }PROTOCOL_COMMANDS_t;
     
-     /// @}   CommandGroup
-
         
 
 
          
-/** @}*/ // protocolModule
+
 #endif 

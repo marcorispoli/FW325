@@ -44,6 +44,18 @@ int keep_alive_timer = 0;
 bool change_mode_request = false;
 int change_mode;
 
+/**
+ * This function updates all together all the Protocol status 
+ * register that depends by this module.
+ * 
+ * The following status are updated here:
+ * + The WORKING_MODE status register;
+ * + The POSITION status register;
+ * 
+ * This function is called in the MotorLoop() routine 
+ * that is always called during the workflow after every workflow iteration.
+ * 
+ */
 static void motorUpdateStatus(void){
     StatusModeRegister.mode = motorStruct.exec_mode;
     StatusModeRegister.general_enable =  motorStruct.general_enable;
@@ -71,28 +83,80 @@ static void motorUpdateStatus(void){
     
 }
 
-
-static void motorGetXYZ(){
+/**
+ * This function converts the X position sensor 
+ * and convert it into the position units.
+ * 
+ * The position shall be calibrated with the hardware trimmers on the board.
+ * According with the ADC0 module setting, the routine takes about 7us to completes.
+ */
+static void motorGetX(){
     
     ADC0_ChannelSelect( ADC_POSINPUT_AIN5, ADC_NEGINPUT_GND );
     ADC0_ConversionStart();
     while(!ADC0_ConversionStatusGet());
     motorStruct.sensors.x = (int) ADC0_ConversionResultGet() - 50;
+    return;
+}
+
+/**
+ * This function converts the Y position sensor 
+ * and convert it into the position units.
+ * 
+ * The position shall be calibrated with the hardware trimmers on the board.
+ * According with the ADC0 module setting, the routine takes about 7us to completes. 
+ */
+static void motorGetY(){
     
     ADC0_ChannelSelect( ADC_POSINPUT_AIN6, ADC_NEGINPUT_GND );
     ADC0_ConversionStart();
     while(!ADC0_ConversionStatusGet());
     motorStruct.sensors.y = (int) ADC0_ConversionResultGet() - 50;
-    
+    return;
+}
+
+/**
+ * This function converts the Z position sensor 
+ * and convert it into the position units.
+ * 
+ * The position shall be calibrated with the hardware trimmers on the board.
+ * According with the ADC0 module setting, the routine takes about 7us to completes.
+ */
+static void motorGetZ(){    
     ADC0_ChannelSelect( ADC_POSINPUT_AIN7, ADC_NEGINPUT_GND );
     ADC0_ConversionStart();
     while(!ADC0_ConversionStatusGet());    
     motorStruct.sensors.z = (int) ADC0_ConversionResultGet() - 50;
-    
-    
     return;
 }
 
+/**
+ * This function calls the conversion routines to get the X,Y and Z positions.
+ * According with the ADC0 module setting, the routine takes about 21us to completes.
+ */
+static void motorGetXYZ(){
+    motorGetX();
+    motorGetY();
+    motorGetZ();    
+    return;
+}
+
+/**
+ * This function allows to select up to 7 power levels:
+ * 
+ * |Level|Voltage (respect 24V) |
+ * |:--|:--|
+ * |0|38%|
+ * |1|42%|
+ * |2|46%|
+ * |3|50%|
+ * |4|65%|
+ * |5|71%|
+ * |6|85%|
+ * 
+ * @param val: this is the requested power level
+ * 
+ */
 static void motorSetPower(unsigned char val){
     if(val > 7) val = 7;
     val = 7 - val;
@@ -107,6 +171,24 @@ static void motorSetPower(unsigned char val){
     
     return;
 }
+
+/**
+ * This function sets the current driver activation mode.
+ * 
+ * The driver can be configured to the following modes:
+ * +  MOTORS_DISABLED: all the motors are set to high impedance;
+ * +  MOTOR_X_LEFT: the X motor is enabled and the direction is set to Left direction;
+ * +  MOTOR_X_RIGHT: the X motor is enabled and the direction is set to Right direction;
+ * +  MOTOR_X_SHORT: the X motor is enabled and the output are closed to ground;
+ * +  MOTOR_Y_HOME: the Y motor is enabled and the direction is set to Home direction;
+ * +  MOTOR_Y_FIELD: the Y motor is enabled and the direction is set to In Field direction;
+ * +  MOTOR_Y_SHORT: the Y motor is enabled and the output are closed to ground;
+ * +  MOTOR_Z_UP: the Z motor is enabled and the direction is set to Up direction;
+ * +  MOTOR_Z_DOWN: the Z motor is enabled and the direction is set to Down direction;
+ * +  MOTOR_Z_SHORT: the Z motor is enabled and the output are closed to ground;  
+ * 
+ * @param mode
+ */
 static void motorActivationMode(MOTOR_MODE_t mode){
     motorStruct.mode = mode;
     
@@ -184,7 +266,12 @@ static void motorActivationMode(MOTOR_MODE_t mode){
 }
 
 
-
+/**
+ * This function polls the keyboard inputs and provides 
+ * the current pression event.
+ * 
+ * @return the key pressed event.
+ */
 bool getKeyPressed(void){
     
     motorStruct.keyboard.xp = ! uc_BUTTON_XP_Get();
@@ -198,6 +285,19 @@ bool getKeyPressed(void){
     
 }
 
+/**
+ * This function handles the workflow for the Disable status.
+ * 
+ * In the Disable Status workflow the motors are disabled and 
+ * the safety power switch is open (both general and key enables are off).
+ * 
+ * Form the Disable status, pressing a button for almost one second, is possible
+ * to enter the Calibration Mode.
+ * 
+ * When a keyboard button is kept ON for one second, the buzzer 
+ * sounds warning that the Calibration mode is entered.
+ *  
+ */ 
 void motorDisableModeManagement(void){
     static int key_pressed_timer = 0;
     static bool activated = false;
@@ -235,7 +335,54 @@ void motorDisableModeManagement(void){
     return;    
 }
 
-
+/**
+ * The calibration mode handles the hardware position calibration.
+ * 
+ * The calibration process involves the setting of the Zero position trimmer
+ * and the Travel trimmer for all the axes position sensors.
+ * 
+ * The zero position trimmer sets the mechanical position where the 
+ * position value is recognized as 0.
+ * 
+ * The Travel trimmer regulates the unit scale: the trimmer shall be adjusted 
+ * so that the measured distance equals to the expected.
+ * 
+ * There are two push buttons for any axe to help the trimmer adjustment.
+ * 
+ * The X adjustment buttons:
+ * + The X- button activates the X axes to the current 0 position:\n
+ *  the trimmer shall be changed in order to get the expected mechanical zero position.
+ * + The X+ button activates the X axes to the position 250mm: the trimmer shall be adjusted \n
+ * so that the actual travel distance matches with the 250mm.
+ *  
+ * The Y adjustment buttons:
+ * + The Y- button activates the Y axes to the current 0 position:\n
+ *  the trimmer shall be changed in order to get the expected mechanical zero position.
+ * + The Y+ button activates the Y axes to the position 60mm: the trimmer shall be adjusted \n
+ * so that the actual travel distance matches with the 60mm.
+ *  
+ * The Z adjustment buttons:
+ * + The Z- button activates the Z axes to the current 0 position:\n
+ *  the trimmer shall be changed in order to get the expected mechanical zero position.
+ * + The Z+ button activates the Z axes to the position 130mm: the trimmer shall be adjusted \n
+ * so that the actual travel distance matches with the 130mm.
+ * 
+ * The Calibration Mode exits to the Disable Mode 
+ * if no key button should be pressed within 60 seconds.  
+ * 
+ *  NOTE: the activation requires that a key button is kept pressed during 
+ *  the whole travel.
+ * 
+ *  The Buzzer will sound with a single pulse when the target position is detected.
+ *  
+ *  In case of mechanical block (impact with mechanical parts) the activation terminates
+ *  and a twin set of buzzer pulses will then be generated.     
+ * 
+ *  NOTE: When an activation terminates whether in target position, in obstacle or in the case
+ * of button release, the driver shorts for 500ms the motor wires in order 
+ * to stop the rotor inertia.  
+ *  
+ */
 void motorCalibModeManagement(void){
     static bool activate_x = false;
     static bool activate_y = false;
@@ -352,6 +499,19 @@ void motorCommandModeManagement(void){
     
 }
 
+/**
+ * This is the Service MOde management workflow routine.
+ * 
+ * In service mode, some service command can be executed:
+ * + MOTOR_SERVICE_CYCLE_TEST: executes an infinite set of cycles 
+ * moving all the axes in and out positions.\n
+ * The command terminates when a key button is pressed or a protocol command
+ * is received;
+ * 
+ * When no command is in action, the motor driver is disabled as well the 
+ * safety power switch.
+ *  
+ */
 void motorServiceModeManagement(void){
     
     if(motorStruct.service.command == MOTOR_SERVICE_CYCLE_TEST)
@@ -446,6 +606,16 @@ void motorServiceModeManagement(void){
  
 }
 
+/**
+ * This is the Main Workflow management routine.
+ * 
+ * This function handles the current workflow status, 
+ * calling the proper workflow handling routine.
+ * 
+ * At the end of every workflow routine sequence, 
+ * the protocol status registers are updated.
+ * 
+ */
 void motorLoop(void){
     
     // Always gets the XYZ
@@ -477,6 +647,10 @@ void motorLoop(void){
     
 }
 
+/**
+ * This is a routine called every 1 second, used to implement long timers 
+ * in the current module, as the keep-alive timers. 
+ */
 void motor1sLoop(void){
     
     // keep alive timer
@@ -484,6 +658,13 @@ void motor1sLoop(void){
     
 }
 
+/**
+ * This function shall be called at the beginning of the application
+ * in order to initialize the motor module.
+ * 
+ * At the end of the initialization the module is set in the Disabled Mode.
+ * 
+ */
 void motorInit(void){
     
     // Sets the initial operating mode
@@ -504,25 +685,53 @@ void motorInit(void){
     motorUpdateStatus();    
 }
 
+/**
+ * This function requests to change the current workflow to Service Mode.
+ * 
+ * The workflow will change at the next MotorLoop() execution.
+ */
 void motorSetServiceMode(void){
     change_mode_request = true;
     change_mode = SERVICE_MODE;
 }
+
+/**
+ * This function requests to change the current workflow to Disable Mode.
+ * 
+ * The workflow will change at the next MotorLoop() execution.
+ */
 void motorSetDisableMode(void){
     change_mode_request = true;
     change_mode = DISABLE_MODE;
     
 }
+
+/**
+ * This function requests to change the current workflow to Command Mode.
+ * 
+ * The workflow will change at the next MotorLoop() execution.
+ */
 void motorSetCommandMode(void){
     change_mode_request = true;
     change_mode = COMMAND_MODE;
 
 }
+
+/**
+ * This function requests to change the current workflow to Calibration Mode.
+ * 
+ * The workflow will change at the next MotorLoop() execution.
+ */
 void motorSetCalibMode(void){
     change_mode_request = true;
     change_mode = CALIB_MODE;
 }
 
+/**
+ * This function requests to activate the Service cycle test.
+ * 
+ * The test will start at the next MotorLoop() execution.
+ */
 bool motorServiceTestCycle(void){
     if(motorStruct.exec_mode != SERVICE_MODE) return false;
     
