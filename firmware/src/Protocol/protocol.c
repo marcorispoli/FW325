@@ -142,11 +142,16 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
 //_________________________________ PROTOCOL DATA ACCESS IMPLEMENTATION ______________________________________
 
 void updateStatusRegister(void* reg){
-    MET_Can_Protocol_SetStatusReg(((GENERIC_STATUS_t*) reg)->idx, 0, ((GENERIC_STATUS_t*) reg)->d0 );
-    MET_Can_Protocol_SetStatusReg(((GENERIC_STATUS_t*) reg)->idx, 1, ((GENERIC_STATUS_t*) reg)->d1 );
-    MET_Can_Protocol_SetStatusReg(((GENERIC_STATUS_t*) reg)->idx, 2, ((GENERIC_STATUS_t*) reg)->d2 );
-    MET_Can_Protocol_SetStatusReg(((GENERIC_STATUS_t*) reg)->idx, 3, ((GENERIC_STATUS_t*) reg)->d3 );
+    MET_Can_Protocol_SetStatusReg(((REGISTER_STRUCT_t*) reg)->idx, 0, ((REGISTER_STRUCT_t*) reg)->d0 );
+    MET_Can_Protocol_SetStatusReg(((REGISTER_STRUCT_t*) reg)->idx, 1, ((REGISTER_STRUCT_t*) reg)->d1 );
+    MET_Can_Protocol_SetStatusReg(((REGISTER_STRUCT_t*) reg)->idx, 2, ((REGISTER_STRUCT_t*) reg)->d2 );
+    MET_Can_Protocol_SetStatusReg(((REGISTER_STRUCT_t*) reg)->idx, 3, ((REGISTER_STRUCT_t*) reg)->d3 );
 }
 
- 
-        
+void updateDataRegister(void* reg){
+    ((REGISTER_STRUCT_t*) reg)->d0 = MET_Can_Protocol_GetData(((REGISTER_STRUCT_t*) reg)->idx, 0);
+    ((REGISTER_STRUCT_t*) reg)->d1 = MET_Can_Protocol_GetData(((REGISTER_STRUCT_t*) reg)->idx, 1);
+    ((REGISTER_STRUCT_t*) reg)->d2 = MET_Can_Protocol_GetData(((REGISTER_STRUCT_t*) reg)->idx, 2);
+    ((REGISTER_STRUCT_t*) reg)->d3 = MET_Can_Protocol_GetData(((REGISTER_STRUCT_t*) reg)->idx, 3);
+    
+}

@@ -3,16 +3,11 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/Shared/CAN/MET_can_protocol.h</file>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/Protocol/protocol.h</file>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/Protocol/protocol.c</file>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/main.c</file>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/config/default/peripheral/adc/plib_adc0.h</file>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/config/default/peripheral/adc/plib_adc0.c</file>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/Motors/motors.h</file>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/Shared/CAN/MET_can_protocol.c</file>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/Motors/motors.c</file>
-            <file>file:/D:/GIT/FW/FW325/firmware/src/config/default/peripheral/adc/plib_adc_common.h</file>
+            <file>file:/C:/Users/marco/Documents/Data/Progetti-GIT/FW/fw_pcb325/firmware/src/Protocol/protocol.h</file>
+            <file>file:/C:/Users/marco/Documents/Data/Progetti-GIT/FW/fw_pcb325/firmware/src/Motors/motors.c</file>
+            <file>file:/C:/Users/marco/Documents/Data/Progetti-GIT/FW/fw_pcb325/firmware/src/Shared/CAN/MET_can_protocol.c</file>
+            <file>file:/C:/Users/marco/Documents/Data/Progetti-GIT/FW/fw_pcb325/firmware/src/Protocol/protocol.c</file>
+            <file>file:/C:/Users/marco/Documents/Data/Progetti-GIT/FW/fw_pcb325/firmware/src/Shared/CAN/MET_can_protocol.h</file>
         </group>
     </open-files>
 </project-private>
