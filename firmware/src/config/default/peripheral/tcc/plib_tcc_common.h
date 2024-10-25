@@ -1,22 +1,20 @@
 /*******************************************************************************
-  Timer/Counter(TC4) PLIB
+  Timer/Counter for Control(TCC) Peripheral Library Interface Header File
 
   Company
     Microchip Technology Inc.
 
   File Name
-    plib_tc4.h
+    plib_tcc_common.h
 
   Summary
-    TC4 PLIB Header File.
+    TCC peripheral library interface.
 
   Description
-    This file defines the interface to the TC peripheral library. This
+    This file defines the interface to the TCC peripheral library. This
     library provides access to and control of the associated peripheral
     instance.
 
-  Remarks:
-    None.
 
 *******************************************************************************/
 
@@ -45,22 +43,22 @@
 *******************************************************************************/
 // DOM-IGNORE-END
 
-#ifndef PLIB_TC4_H       // Guards against multiple inclusion
-#define PLIB_TC4_H
+#ifndef PLIB_TCC_COMMON_H    // Guards against multiple inclusion
+#define PLIB_TCC_COMMON_H
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
-/* This section lists the other files that are included in this file.
+/*  This section lists the other files that are included in this file.
 */
 
-#include "device.h"
-#include "plib_tc_common.h"
+#include <stdbool.h>
+#include <stddef.h>
 
 // DOM-IGNORE-BEGIN
-#ifdef __cplusplus // Provide C Compatibility
+#ifdef __cplusplus  // Provide C++ Compatibility
 
     extern "C" {
 
@@ -72,46 +70,30 @@
 // Section: Data Types
 // *****************************************************************************
 // *****************************************************************************
-/* The following data type definitions are used by the functions in this
+/*  The following data type definitions are used by the functions in this
     interface and should be considered part it.
 */
-
 // *****************************************************************************
+
+typedef void (*TCC_CALLBACK)( uint32_t status, uintptr_t context );
 // *****************************************************************************
-// Section: Interface Routines
-// *****************************************************************************
-// *****************************************************************************
-/* The following functions make up the methods (set of possible operations) of
-   this interface.
-*/
+
+typedef struct
+{
+    TCC_CALLBACK callback_fn;
+    uintptr_t context;
+}TCC_CALLBACK_OBJECT;
+
+typedef enum 
+{
+    TCC_COMMAND_NONE,
+    TCC_COMMAND_START_RETRIGGER,
+    TCC_COMMAND_STOP,
+    TCC_COMMAND_FORCE_UPDATE,
+    TCC_COMMAND_READ_SYNC
+}TCC_COMMAND;
 
 
-void TC4_CompareInitialize( void );
-
-void TC4_CompareStart( void );
-
-void TC4_CompareStop( void );
-
-uint32_t TC4_CompareFrequencyGet( void );
-
-bool TC4_Compare16bitPeriodSet( uint16_t period );
-
-uint16_t TC4_Compare16bitPeriodGet( void );
-
-uint16_t TC4_Compare16bitCounterGet( void );
-
-void TC4_Compare16bitCounterSet( uint16_t count );
-
-bool TC4_Compare16bitMatch0Set( uint16_t compareValue );
-
-bool TC4_Compare16bitMatch1Set( uint16_t compareValue );
-
-
-
-void TC4_CompareCallbackRegister( TC_COMPARE_CALLBACK callback, uintptr_t context );
-
-
-void TC4_CompareCommandSet(TC_COMMAND command);
 
 
 // DOM-IGNORE-BEGIN
@@ -122,4 +104,4 @@ void TC4_CompareCommandSet(TC_COMMAND command);
 #endif
 // DOM-IGNORE-END
 
-#endif /* PLIB_TC4_H */
+#endif /* PLIB_TCC_COMMON_H */

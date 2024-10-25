@@ -183,11 +183,6 @@
 #define uc_DRIVER_ENA_PIN                  PORT_PIN_PB15
 
 /*** Macros for uc_DIMM pin ***/
-#define uc_DIMM_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 12U))
-#define uc_DIMM_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 12U))
-#define uc_DIMM_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 12U))
-#define uc_DIMM_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 12U))
-#define uc_DIMM_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 12U))
 #define uc_DIMM_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 12U)) & 0x01U)
 #define uc_DIMM_PIN                  PORT_PIN_PA12
 

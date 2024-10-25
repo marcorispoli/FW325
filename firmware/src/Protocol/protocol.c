@@ -50,88 +50,349 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
 
     switch(cmd){
         
-        /// \addtogroup CANPROT
-        /// ## Abort Command
-        /// + Command code: \ref MET_COMMAND_ABORT;
-        /// + Parameters: no parameters;
-        /// + Description: Abort all the activated command;
-        /// + Command return mode: Immediate [0,0];
+        /**
+         * 
+         * \addtogroup CANPROT 
+         * ## ABORT COMMAND
+         * 
+         * This command aborts any pending command.
+         * 
+         * @param cmd = \ref MET_COMMAND_ABORT;
+         * @param d0 = not used
+         * @param d1 = not used
+         * @param d2: not used
+         * @param d3: not used
+         * 
+         * @return
+         * 
+         * + ImmediateError(ABORT)
+         * 
+         */   
         case MET_COMMAND_ABORT:  // This is the Library mandatory 
-            motorSetDisableMode();
-            MET_Can_Protocol_returnCommandExecuted(0,0);
+            motorStruct.abort_request = true;
+            MET_Can_Protocol_returnCommandAborted();              
             break;
         
-        /// \addtogroup CANPROT
-        /// ## Disable Mode Command
-        /// + Command code: \ref CMD_DISABLE_MODE
-        /// + Parameters: no parameters;
-        /// + Description: activates the Disable Workflow;
-        /// + Command return mode: Immediate [0,0];
+        /**
+         * 
+         * \addtogroup CANPROT 
+         * ## ACTIVATE DISABLE MODE WORKFLOW
+         * 
+         * This command activates the Disable Mode Workflow.
+         * 
+         * @param cmd = \ref CMD_DISABLE_MODE;
+         * @param d0 = not used
+         * @param d1 = not used
+         * @param d2: not used
+         * @param d3: not used
+         * 
+         * @return
+         * 
+         * + ImmediateExecuted(0,0)
+         * 
+         */   
         case CMD_DISABLE_MODE:
             motorSetDisableMode();
             MET_Can_Protocol_returnCommandExecuted(0,0);
             break;
             
-        /// \addtogroup CANPROT
-        /// ## Command Mode Command
-        /// + Command code: \ref CMD_COMMAND_MODE
-        /// + Parameters: no parameters;
-        /// + Description: activates the Command Workflow;
-        /// + Command return mode: Immediate [0,0];    
+        /**
+         * 
+         * \addtogroup CANPROT 
+         * ## ACTIVATE COMMAND MODE WORKFLOW
+         * 
+         * This command activates the Command Mode Workflow.
+         * 
+         * @param cmd = \ref CMD_COMMAND_MODE;
+         * @param d0 = not used
+         * @param d1 = not used
+         * @param d2: not used
+         * @param d3: not used
+         * 
+         * @return
+         * 
+         * + ImmediateExecuted(0,0)
+         * 
+         */   
         case CMD_COMMAND_MODE:
             motorSetCommandMode();
             MET_Can_Protocol_returnCommandExecuted(0,0);
             break;
         
-        /// \addtogroup CANPROT
-        /// ## Service Mode Command
-        /// + Command code: \ref CMD_SERVICE_MODE
-        /// + Parameters: no parameters;
-        /// + Description: activates the Service Workflow;
-        /// + Command return mode: Immediate [0,0];    
+        /**
+         * <div style="page-break-after: always;"></div>
+         * \addtogroup CANPROT 
+         * ## ACTIVATE SERVICE MODE WORKFLOW
+         * 
+         * This command activates the Service Mode Workflow.
+         * 
+         * @param cmd = \ref CMD_SERVICE_MODE;
+         * @param d0 = not used
+         * @param d1 = not used
+         * @param d2: not used
+         * @param d3: not used
+         * 
+         * @return
+         * 
+         * + ImmediateExecuted(0,0)
+         * 
+         */   
         case CMD_SERVICE_MODE: // Sets the service mode
             motorSetServiceMode();
             MET_Can_Protocol_returnCommandExecuted(0,0);
             break;
             
-        /// \addtogroup CANPROT    
-        /// ## Calibration Mode Command
-        /// + Command code: \ref CMD_CALIB_MODE
-        /// + Parameters: no parameters;
-        /// + Description: activates the Calibration Workflow;
-        /// + Command return mode: Immediate [0,0];    
+         /**
+         * 
+         * \addtogroup CANPROT 
+         * ## ACTIVATE CALIBRATION MODE WORKFLOW
+         * 
+         * This command activates the Calibration Mode Workflow.
+         * 
+         * @param cmd = \ref CMD_CALIB_MODE;
+         * @param d0 = not used
+         * @param d1 = not used
+         * @param d2: not used
+         * @param d3: not used
+         * 
+         * @return
+         * 
+         * + ImmediateExecuted(0,0)
+         * 
+         */   
         case CMD_CALIB_MODE: // Sets the service mode
             motorSetCalibMode();
             MET_Can_Protocol_returnCommandExecuted(0,0);
             break;
         
-        /// \addtogroup CANPROT   
-        /// ## Move XYZ Command
-        /// + Command code: \ref CMD_MOVE_XYZ
-        /// + Parameters: XL, XH, Y, Z;
-        ///     + [XH,XL]: is the target X position in mm;
-        ///     + [Y]: is the target Y position in mm;
-        ///     + [Z]: is the target Z position in mm;
-        /// + Pre Condition: COMMAND MODE active
-        /// + Description: activates the XYZ axes to the target position;
-        /// + Command return mode: Immediate [0,0];
-        case CMD_MOVE_XYZ:
-            MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_AVAILABLE);
+        /**
+         * <div style="page-break-after: always;"></div>
+         * \addtogroup CANPROT 
+         * ## MOVE-X COMMAND
+         * 
+         * This command activates the X to the target position.\n
+         * The target position is passed to the command in 0.1mm/units
+         * 
+         * @param cmd = \ref CMD_MOVE_X;
+         * @param d0 = XL: low byte of the target X position (0.1mm/units)
+         * @param d1 = XH: high byte of the target X position (0.1mm/units)
+         * @param d2: not used
+         * @param d3: not used
+         * @return
+         * 
+         */
+        case CMD_MOVE_X:
+            switch(motorMoveX((int) d0 + (int) d1 * 256)){
+                
+                /// \addtogroup CANPROT
+                /// \test Already-in-target: ImmediateExecuted(XL,XH)
+                case MOTOR_ALREADY_IN_POSITION:
+                    MET_Can_Protocol_returnCommandExecuted(d0,d1);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Command-started: CommandExecuting
+                case MOTOR_COMMAND_EXECUTING:
+                    MET_Can_Protocol_returnCommandExecuting();
+                    break;
+                
+                /// \addtogroup CANPROT
+                /// \test Invalid-Position (exceeding the maximum position): ImmediateError(\ref MET_CAN_COMMAND_INVALID_DATA)
+                case MOTOR_ERROR_INVALID_POSITION:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_INVALID_DATA);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Invalid-Working-Mode : ImmediateError(\ref MET_CAN_COMMAND_NOT_ENABLED)    
+                case MOTOR_ERROR_INVALID_MODE:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_ENABLED);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Safety-Switch-Disabled (needle detected) : ImmediateError(\ref MET_CAN_COMMAND_NOT_ENABLED)    
+                case MOTOR_ERROR_DISABLE_CONDITION:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_ENABLED);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Busy : ImmediateError(\ref MET_CAN_COMMAND_BUSY)       
+                case MOTOR_ERROR_BUSY:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_BUSY);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test invalid-return_code (software bug): ImmediateError(\ref MET_CAN_COMMAND_WRONG_RETURN_CODE)       
+                default:    
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_WRONG_RETURN_CODE);
+            }
             break;
         
-        /// \addtogroup CANPROT
-        /// ## Service Test Cycle  Command
-        /// + Command code: \ref CMD_SERVICE_TEST_CYCLE
-        /// + Parameters: no parameters;
-        /// + Description: activates the Test Cycle routine;
-        /// + Pre Condition: SERVICE MODE active    
-        /// + Command return with success: Immediate [0,0];     
-        /// + Command return with error: MET_CAN_COMMAND_NOT_ENABLED;     
-        case CMD_SERVICE_TEST_CYCLE:
-            if(!motorServiceTestCycle()) MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_ENABLED);
-            else MET_Can_Protocol_returnCommandExecuted(0,0);
+         /**
+         * <div style="page-break-after: always;"></div>
+         * \addtogroup CANPROT 
+         * ## MOVE-Y COMMAND
+         * 
+         * This command activates the Y to the target position.\n
+         * The target position is passed to the command in 0.1mm/units
+         * 
+         * @param cmd = \ref CMD_MOVE_Y;
+         * @param d0 = YL: low byte of the target Y position (0.1mm/units)
+         * @param d1 = YH: high byte of the target Y position (0.1mm/units)
+         * @param d2: not used
+         * @param d3: not used
+         * @return
+         * 
+         */
+        case CMD_MOVE_Y:
+            switch(motorMoveY((int) d0 + (int) d1 * 256)){
+                
+                /// \addtogroup CANPROT
+                /// \test Already-in-target: ImmediateExecuted(YL,YH)
+                case MOTOR_ALREADY_IN_POSITION:
+                    MET_Can_Protocol_returnCommandExecuted(d0,d1);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Command-started: CommandExecuting
+                case MOTOR_COMMAND_EXECUTING:
+                    MET_Can_Protocol_returnCommandExecuting();
+                    break;
+                
+                /// \addtogroup CANPROT
+                /// \test Invalid-Position (exceeding the maximum position): ImmediateError(\ref MET_CAN_COMMAND_INVALID_DATA)
+                case MOTOR_ERROR_INVALID_POSITION:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_INVALID_DATA);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Invalid-Working-Mode : ImmediateError(\ref MET_CAN_COMMAND_NOT_ENABLED)    
+                case MOTOR_ERROR_INVALID_MODE:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_ENABLED);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Safety-Switch-Disabled (needle detected) : ImmediateError(\ref MET_CAN_COMMAND_NOT_ENABLED)    
+                case MOTOR_ERROR_DISABLE_CONDITION:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_ENABLED);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Busy : ImmediateError(\ref MET_CAN_COMMAND_BUSY)       
+                case MOTOR_ERROR_BUSY:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_BUSY);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test invalid-return_code (software bug): ImmediateError(\ref MET_CAN_COMMAND_WRONG_RETURN_CODE)       
+                default:    
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_WRONG_RETURN_CODE);
+            }
             break;
             
+         /**
+         * <div style="page-break-after: always;"></div>
+         * \addtogroup CANPROT 
+         * ## MOVE-Z COMMAND
+         * 
+         * This command activates the Z to the target position.\n
+         * The target position is passed to the command in 0.1mm/units
+         * 
+         * @param cmd = \ref CMD_MOVE_Z;
+         * @param d0 = ZL: low byte of the target Z position (0.1mm/units)
+         * @param d1 = ZH: high byte of the target Z position (0.1mm/units)
+         * @param d2: not used
+         * @param d3: not used
+         * @return
+         * 
+         */
+        case CMD_MOVE_Z:
+            switch(motorMoveZ((int) d0 + (int) d1 * 256)){
+                
+                /// \addtogroup CANPROT
+                /// \test Already-in-target: ImmediateExecuted(ZL,ZH)
+                case MOTOR_ALREADY_IN_POSITION:
+                    MET_Can_Protocol_returnCommandExecuted(d0,d1);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Command-started: CommandExecuting
+                case MOTOR_COMMAND_EXECUTING:
+                    MET_Can_Protocol_returnCommandExecuting();
+                    break;
+                
+                /// \addtogroup CANPROT
+                /// \test Invalid-Position (exceeding the maximum position): ImmediateError(\ref MET_CAN_COMMAND_INVALID_DATA)
+                case MOTOR_ERROR_INVALID_POSITION:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_INVALID_DATA);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Invalid-Working-Mode : ImmediateError(\ref MET_CAN_COMMAND_NOT_ENABLED)    
+                case MOTOR_ERROR_INVALID_MODE:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_ENABLED);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Safety-Switch-Disabled (needle detected) : ImmediateError(\ref MET_CAN_COMMAND_NOT_ENABLED)    
+                case MOTOR_ERROR_DISABLE_CONDITION:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_ENABLED);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test Busy : ImmediateError(\ref MET_CAN_COMMAND_BUSY)       
+                case MOTOR_ERROR_BUSY:
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_BUSY);
+                    break;
+                    
+                /// \addtogroup CANPROT
+                /// \test invalid-return_code (software bug): ImmediateError(\ref MET_CAN_COMMAND_WRONG_RETURN_CODE)       
+                default:    
+                    MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_WRONG_RETURN_CODE);
+            }
+            break;
+            
+        
+        /**
+         * <div style="page-break-after: always;"></div>
+         * \addtogroup CANPROT 
+         * ## TEST CYCLE SERVICE COMMAND
+         * 
+         * This command activates a test cycle routine.
+         * 
+         * The test executes the following steps:
+         * + Moves Z to 10mm;
+         * + Moves X to 240 mm;
+         * + Moves Y to 60 mm;
+         * + Moves Y to 0 mm;
+         * + Moves X to 0 mm;
+         * + Moves Z to 10 mm;
+         * 
+         * The cycle is repeated until a key is pressed or the same command is received.
+         * 
+         * @param cmd = \ref CMD_SERVICE_TEST_CYCLE;
+         * @param d0:  not used
+         * @param d1: not used
+         * @param d2: not used
+         * @param d3: not used
+         * 
+         * @return
+         * 
+         */
+        case CMD_SERVICE_TEST_CYCLE:
+            
+            /// \addtogroup CANPROT
+            /// \test not-in-service-mode : ImmediateError(\ref MET_CAN_COMMAND_NOT_ENABLED) 
+            if(!motorServiceTestCycle()) MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_ENABLED);
+            
+            /// \addtogroup CANPROT
+            /// \test test-started : ImmediateSuccess(0,0) 
+            else MET_Can_Protocol_returnCommandExecuted(0,0);
+            break;
+          
+         /**
+         * <div style="page-break-after: always;"></div>
+         * \addtogroup CANPROT 
+         */ 
         default:
             MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_AVAILABLE);
     }

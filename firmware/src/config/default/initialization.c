@@ -133,24 +133,14 @@ void SYS_Initialize ( void* data )
 
     EVSYS_Initialize();
 
-    CAN0_Initialize();
-
-    TC1_CompareInitialize();
-
-    RTC_Initialize();
-
-    TC0_TimerInitialize();
-
-    TC3_CompareInitialize();
-
-    TC2_CompareInitialize();
-
-    TC5_CompareInitialize();
-
-    TC4_CompareInitialize();
+    TCC0_PWMInitialize();
 
     ADC0_Initialize();
+    CAN0_Initialize();
+
     ADC1_Initialize();
+    RTC_Initialize();
+
 
 
 

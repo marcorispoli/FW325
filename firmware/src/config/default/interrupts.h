@@ -61,12 +61,6 @@ void NonMaskableInt_Handler (void);
 void HardFault_Handler (void);
 void RTC_InterruptHandler (void);
 void CAN0_InterruptHandler (void);
-void TC0_TimerInterruptHandler (void);
-void TC1_CompareInterruptHandler (void);
-void TC2_CompareInterruptHandler (void);
-void TC3_CompareInterruptHandler (void);
-void TC4_CompareInterruptHandler (void);
-void TC5_CompareInterruptHandler (void);
 
 
 

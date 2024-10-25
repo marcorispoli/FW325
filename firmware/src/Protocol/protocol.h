@@ -16,19 +16,11 @@
     #define ext_static extern
 #endif
 
- /*!
-  * \defgroup CANPROT CAN Communication Protocol Module
-  * \ingroup applicationModule
-  * 
-  * This Module implements the functions of the PCB/23-325 Software Communication protocol specifications.
-  * 
-  */
-
-
- 
-
 /*!
- * \addtogroup CANPROT 
+ * \defgroup CANPROT CAN Communication Protocol Module
+ * \ingroup applicationModule
+ * 
+ * This Module implements the functions of the PCB/23-325 Software Communication protocol specifications.
  * 
  * ## Dependencies
  * 
@@ -41,7 +33,6 @@
  *  
  * The Application implements the communication protocol  
  * described in the PCB/23-325 Software Communication protocol specifications.
- * 
  */
 
 /// \ingroup CANPROT 
@@ -71,7 +62,7 @@ typedef struct {
 typedef enum{
     MET_CAN_APP_DEVICE_ID    =  0x15,      //!< Application DEVICE CAN Id address
     MET_CAN_STATUS_REGISTERS =  3,        //!< Defines the total number of implemented STATUS registers 
-    MET_CAN_DATA_REGISTERS   =  3,        //!< Defines the total number of implemented Application DATA registers 
+    MET_CAN_DATA_REGISTERS   =  1,        //!< Defines the total number of implemented Application DATA registers 
     MET_CAN_PARAM_REGISTERS  =  0       //!< Defines the total number of implemented PARAMETER registers 
 }PROTOCOL_DEFINITION_DATA_t;
 
@@ -133,15 +124,16 @@ typedef enum{
   STATUS_Z_POSITION_IDX = 2,//!< Status Position for the Z coordinate 
 }STATUS_INDEX_t;
 
-    /**
-     * This is the enumeration type describing the current workflow code value.
-     */
-    typedef enum{
-        DISABLE_MODE = 0,   //!< This is the Disabled Mode 
-        CALIB_MODE,         //!< This is the Calibration Mode 
-        COMMAND_MODE,       //!< This is the Command Mode 
-        SERVICE_MODE        //!< This is the Service Mode 
-    }STATUS_WORKING_MODE_t;
+/**
+ * \ingroup CANPROT
+ * This is the enumeration type describing the current workflow code value.
+ */
+typedef enum{
+    DISABLE_MODE = 0,   //!< This is the Disabled Mode 
+    CALIB_MODE,         //!< This is the Calibration Mode 
+    COMMAND_MODE,       //!< This is the Command Mode 
+    SERVICE_MODE        //!< This is the Service Mode 
+}STATUS_WORKING_MODE_t;
         
     
     
@@ -208,10 +200,10 @@ typedef enum{
     /// Status XY Position description structure
     typedef struct {
         const unsigned char idx;
-        unsigned char xl; //!< Low byte of the X Position 
-        unsigned char xh; //!< High byte of the X Position 
-        unsigned char yl; //!< Low byte of the Y Position
-        unsigned char yh; //!< High byte of the Y Position
+        unsigned char XL; //!< Low byte of the X Position 
+        unsigned char XH; //!< High byte of the X Position 
+        unsigned char YL; //!< Low byte of the Y Position
+        unsigned char YH; //!< High byte of the Y Position
     }STATUS_XY_POSITION_t;
     
     /**
@@ -239,8 +231,8 @@ typedef enum{
     /// Status Z Position description structure
     typedef struct {
         const unsigned char idx;
-        unsigned char zl; //!< Low byte of the Z Position
-        unsigned char zh; //!< High byte of the Z Position
+        unsigned char ZL; //!< Low byte of the Z Position
+        unsigned char ZH; //!< High byte of the Z Position
         unsigned char d2;  
         unsigned char d3;  
     }STATUS_Z_POSITION_t;
@@ -253,15 +245,15 @@ typedef enum{
 
         /// \ingroup CANPROT
         /// Declaration of the Status XY Position Register  global variables
-        STATUS_XY_POSITION_t StatusPositionRegister = {.idx=STATUS_XY_POSITION_IDX};
+        STATUS_XY_POSITION_t StatusXYPositionRegister = {.idx=STATUS_XY_POSITION_IDX};
         
         /// \ingroup CANPROT
         /// Declaration of the Status Z Position Register  global variables
-        STATUS_Z_POSITION_t StatusPositionRegister = {.idx=STATUS_Z_POSITION_IDX};
+        STATUS_Z_POSITION_t StatusZPositionRegister = {.idx=STATUS_Z_POSITION_IDX};
     #else
         extern STATUS_MODE_t StatusModeRegister;
-        extern STATUS_XY_POSITION_t StatusPositionRegister;
-        extern STATUS_Z_POSITION_t StatusPositionRegister;
+        extern STATUS_XY_POSITION_t StatusXYPositionRegister;
+        extern STATUS_Z_POSITION_t StatusZPositionRegister;
     #endif  
     
 //________________________________________ DATA REGISTER DEFINITION SECTION _   
@@ -272,144 +264,66 @@ typedef enum{
 * ## DATA register description
 * 
 * There are the following DATA registers:\n
-* (See DATA_INDEX_t enum table)
+* (See \ref DATA_INDEX_t enum table)
 * 
 * |IDX|NAME|DESCRIPTION|
 * |:--|:--|:--|
-* |0|Target X|\ref DATA_TARGET_X_t|
-* |1|Target Y|\ref DATA_TARGET_Y_t|
-* |2|Target Z|\ref DATA_TARGET_Z_t|
-* 
+* |0|General Purpose|\ref DATA_GENERAL_X_t|
+*
 *   
 */
-
 
 /// \ingroup CANPROT
 /// Defines the address table for the DATA Registers 
 typedef enum{
-  DATA_TARGET_X_IDX = 0, //!< Target X register
-  DATA_TARGET_Y_IDX = 1, //!< Target Y register
-  DATA_TARGET_Z_IDX = 2, //!< Target Z register
+  DATA_GENERAL_IDX = 0, //!< General Pourpose activation bits
 }DATA_INDEX_t;
 
  
     /**
      * \addtogroup CANPROT
      * 
-     * ### TARGET X DATA REGISTER
+     * ### GENERAL PURPOSE DATA REGISTER
      * 
-     * + Description: DATA_TARGET_X_t;
-     * + IDX: \ref DATA_TARGET_X_IDX;
-     * 
-     * |BYTE.BIT|NAME|DESCRIPTION|
-     * |:--|:--|:--|
-     * |0|XL|This is the low byte of the target X (0.1mm unit)|
-     * |1|XH|This is the high byte of the target X (0.1mm unit)|
-     * |2|vc|verification code|
-     * |3|d3|Not Used|
-     * 
-     * + The target X position is the position will be used for the  \ref CMD_MOVE_XYZ command.
-     * + The target position is in 0.1mm per unit: X = XL + 256 * XH;
-     * + The verification code shall match with the code passed to the \ref CMD_MOVE_XYZ command.
-     * 
-     */ 
-
-    /// \ingroup CANPROT
-    /// This is the TARGET X DATA register description structure
-    typedef struct {
-        const unsigned char idx; //!< Address constant 
-
-        unsigned char XL; //!< target x low byte 
-        unsigned char XH; //!< target x high byte 
-        unsigned char vc; //!< verification code for target x        
-        unsigned char d3;//!< Spare byte 3
-    }DATA_TARGET_X_t;
-
-    /**
-     * \addtogroup CANPROT
-     * 
-     * ### TARGET Y DATA REGISTER
-     * 
-     * + Description: DATA_TARGET_Y_t;
-     * + IDX: \ref DATA_TARGET_Y_IDX;
+     * + Description: DATA_GENERAL_t;
+     * + IDX: \ref DATA_GENERAL_IDX;
      * 
      * |BYTE.BIT|NAME|DESCRIPTION|
      * |:--|:--|:--|
-     * |0|YL|This is the low byte of the target Y (0.1mm unit)|
-     * |1|YH|This is the high byte of the target Y (0.1mm unit)|
-     * |2|vc|verification code|
-     * |3|d3|Not Used|
+     * |0.1|Power-Light|Enable/Disable the power light|
+     * |0.2|Step Keyboard Enable|Enable the step activation when it is previewed|
+     * |0..7|-|-|
+     * |1|Light Duty|0 to 100 power light PWM duty cycle|
+     * |2|-|-|
+     * |3|-|-|
      * 
-     * + The target Y position is the position will be used for the  \ref CMD_MOVE_XYZ command.
-     * + The target position is in 0.1mm per unit: Y = YL + 256 * YH;
-     * + The verification code shall match with the code passed to the \ref CMD_MOVE_XYZ command.
-     * 
+     *   
      */ 
 
     /// \ingroup CANPROT
-    /// This is the TARGET Y DATA register description structure
+    /// This is the GENERAL PURPOSE DATA register description structure
     typedef struct {
         const unsigned char idx; //!< Address constant 
 
-        unsigned char YL; //!< target y low byte 
-        unsigned char YH; //!< target y high byte 
-        unsigned char vc; //!< verification code for target y        
-        unsigned char d3;//!< Spare byte 3
-    }DATA_TARGET_Y_t;
+        unsigned char light_ena:1; //!< power light activation status
+        unsigned char step_keyb_ena:1; //!< enables the steps with the keyboard buttons
+        unsigned char d0_spare:6;
+        
+        unsigned char light_duty; //!< power light pwm duty cycle
+        unsigned char d2; 
+        unsigned char d3;
+    }DATA_GENERAL_t;
 
-     /**
-     * \addtogroup CANPROT
-     * 
-     * ### TARGET Z DATA REGISTER
-     * 
-     * + Description: DATA_TARGET_Z_t;
-     * + IDX: \ref DATA_TARGET_Z_IDX;
-     * 
-     * |BYTE.BIT|NAME|DESCRIPTION|
-     * |:--|:--|:--|
-     * |0|ZL|This is the low byte of the target Z (0.1mm unit)|
-     * |1|ZH|This is the high byte of the target Z (0.1mm unit)|
-     * |2|vc|verification code|
-     * |3|d3|Not Used|
-     * 
-     * + The target Z position is the position will be used for the  \ref CMD_MOVE_XYZ command.
-     * + The target position is in 0.1mm per unit: Z = ZL + 256 * ZH;
-     * + The verification code shall match with the code passed to the \ref CMD_MOVE_XYZ command.
-     * 
-     */ 
-
-    
-    /// \ingroup CANPROT
-    /// This is the TARGET Z DATA register description structure
-    typedef struct {
-        const unsigned char idx; //!< Address constant 
-
-        unsigned char ZL; //!< target z low byte 
-        unsigned char ZH; //!< target z high byte 
-        unsigned char vc; //!< verification code for target z        
-        unsigned char d3;//!< Spare byte 3
-    }DATA_TARGET_Z_t;
-    
     
     #ifdef _PROTOCOL_C
     
         /// \ingroup CANPROT
-        /// Declaration of the DATA TARGET_X Register global variables
-        DATA_TARGET_X_t DataTargetXRegister = {.idx=DATA_TARGET_X_IDX};
+        /// Declaration of the DATA GENERAL PURPOSE Register global variables
+        DATA_GENERAL_t DataGeneralRegister = {.idx=DATA_GENERAL_IDX};
 
-        /// \ingroup CANPROT
-        /// Declaration of the DATA TARGET_Y Register global variables
-        DATA_TARGET_Y_t DataTargetYRegister = {.idx=DATA_TARGET_Y_IDX};
-
-        /// \ingroup CANPROT
-        /// Declaration of the DATA TARGET_Z Register global variables
-        DATA_TARGET_Z_t DataTargetZRegister = {.idx=DATA_TARGET_Z_IDX};
-        
     #else
 
-        extern DATA_TARGET_X_t DataTargetXRegister;
-        extern DATA_TARGET_Y_t DataTargetYRegister;
-        extern DATA_TARGET_Z_t DataTargetZRegister;
+        extern DATA_GENERAL_t DataGeneralRegister;
         
     #endif  
     
@@ -420,7 +334,6 @@ typedef enum{
  * 
  * ## PROTOCOL COMMANDS DESCRIPTION
  * 
- * See \ref PROTOCOL_COMMANDS_t
  */     
 
 /// \ingroup CANPROT
@@ -431,8 +344,10 @@ typedef enum{
    CMD_COMMAND_MODE = 2,        //!< Command Mode Activation Command
    CMD_SERVICE_MODE = 3,        //!< Service Mode Activation Command
    CMD_CALIB_MODE = 4,          //!< Calibration Mode Activation Command
-   CMD_MOVE_XYZ = 5,            //!< Moves to an XYZ position command
-   CMD_SERVICE_TEST_CYCLE = 6   //!< Service Cycle Test activatioin command    
+   CMD_MOVE_X = 5,              //!< Moves the X position command
+   CMD_MOVE_Y = 6,              //!< Moves the Y position command
+   CMD_MOVE_Z = 7,              //!< Moves the Z position command
+   CMD_SERVICE_TEST_CYCLE = 8   //!< Service Cycle Test activatioin command    
 }PROTOCOL_COMMANDS_t;
     
         

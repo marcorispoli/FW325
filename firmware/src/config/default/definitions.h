@@ -50,20 +50,15 @@
 #include <stdbool.h>
 #include "peripheral/nvmctrl/plib_nvmctrl.h"
 #include "peripheral/evsys/plib_evsys.h"
+#include "peripheral/tcc/plib_tcc0.h"
+#include "peripheral/adc/plib_adc0.h"
 #include "peripheral/port/plib_port.h"
 #include "peripheral/clock/plib_clock.h"
 #include "peripheral/nvic/plib_nvic.h"
 #include "peripheral/cmcc/plib_cmcc.h"
 #include "peripheral/can/plib_can0.h"
-#include "peripheral/tc/plib_tc1.h"
-#include "peripheral/rtc/plib_rtc.h"
-#include "peripheral/tc/plib_tc0.h"
-#include "peripheral/tc/plib_tc3.h"
-#include "peripheral/tc/plib_tc2.h"
-#include "peripheral/tc/plib_tc5.h"
-#include "peripheral/tc/plib_tc4.h"
-#include "peripheral/adc/plib_adc0.h"
 #include "peripheral/adc/plib_adc1.h"
+#include "peripheral/rtc/plib_rtc.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
