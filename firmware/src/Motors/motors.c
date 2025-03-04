@@ -307,16 +307,31 @@ bool getKeyPressed(void){
 /**
  * \addtogroup MOTMOD
  * 
- * ## Disable Mode Workflow description
+ * ## MOTOR ACTIVATION MODE DESCRIPTION
  * 
- * In the Disable Status workflow the motors are disabled and 
- * the safety power switch is open (both general and key enables are off).
+ * The firmware implements for possible modes to handle the motor activation:
+ * + DISABLE MODE: this working mode disables the usage of the motors at all;
+ * + CALIBRATION MODE: this working mode allows to use the external (and internal) keyboard to
+ * activate the motor for the position calibration purpose;
+ * + COMMAND MODE: this is the working mode dedicated to the operative usage;
+ * + SERVICE MODE: this is the working mode reserved for test procedures.
+ * 
+ * The following chapters describe in detail every working mode. 
+ */ 
+ 
+/**
+ * \addtogroup MOTMOD
+ * 
+ * ### DISABLE WORKING MODE DESCRIPTION
+ * 
+ * In the Disable working mode, the motors are disabled and 
+ * the safety power switch is kept open (both general and key enables are off).
+ * 
+ * The firmware activates this working mode after the system startup.
  * 
  * From the Disable status, pressing a button for almost one second, it is possible\n
  * to enter the Calibration Mode: 
- * + the buzzer emits a sound signaling the change in the workflow status;
- * 
- * \note the disable mode workflow is the default mode after the board startup. 
+ * + the buzzer emits a sound signaling the change in the working mode status;
  * 
  */ 
 
@@ -333,6 +348,7 @@ void motorDisableModeManagement(void){
     // Disable the keyboard activation enable
     uc_BUTTON_ENA_Clear();
     motorStruct.keyboard.keyboard_enable = false;
+    motorStruct.keyboard.keystep = false;
     
     // Motor disabled
     motorDriverOutput(MOTORS_DISABLED);
@@ -360,6 +376,10 @@ void motorDisableModeManagement(void){
 }
 
 /**
+ * \addtogroup MOTMOD
+ * 
+ * ### MOTOR CALIBRATION MODE DESCRIPTION
+ * 
  * The calibration mode handles the hardware position calibration.
  * 
  * The calibration process involves the setting of the Zero position trimmer
@@ -391,8 +411,8 @@ void motorDisableModeManagement(void){
  * + The Z+ button activates the Z axes to the position 130mm: the trimmer shall be adjusted \n
  * so that the actual travel distance matches with the 130mm.
  * 
- * The Calibration Mode exits to the Disable Mode 
- * if no key button should be pressed within 60 seconds.  
+ * \important The Calibration Mode exits to the Disable Mode 
+ * if no keys are pressed within 60 seconds.  
  * 
  *  NOTE: the activation requires that a key button is kept pressed during 
  *  the whole travel.
@@ -402,7 +422,7 @@ void motorDisableModeManagement(void){
  *  In case of mechanical block (impact with mechanical parts) the activation terminates
  *  and a twin set of buzzer pulses will then be generated.     
  * 
- *  NOTE: When an activation terminates whether in target position, in obstacle or in the case
+ * \note When an activation terminates whether in target position, in obstacle or in the case
  * of button release, the driver shorts for 500ms the motor wires in order 
  * to stop the rotor inertia.  
  *  
@@ -420,6 +440,7 @@ void motorCalibModeManagement(void){
     // Disable the keyboard activation enable
     uc_BUTTON_ENA_Set();
     motorStruct.keyboard.keyboard_enable = true;
+    motorStruct.keyboard.keystep = false;
     
     if(activate_x){
         if(getKeyPressed()) key_release_timer = TIME_us_TIC(200000);
@@ -539,6 +560,29 @@ unsigned char getPowerFromDistance(int distance, int min_power){
     
 }
 
+/**
+ * \addtogroup MOTMOD
+ * 
+ * ### COMMAND MODE DESCRIPTION
+ * 
+ * In the Command working mode the motor activation can be 
+ * executed in the following modes:
+ * + Activation with a Can Protocol Command;
+ * + Activation with the key buttons (only when enabled);
+ * 
+ * <b> Activation with protocol command:</b>\n
+ * The Master can request the positioning of only one axes at a time;
+ *  
+ * <b> Activation with key buttons:</b>\n
+ * If the feature is activated by a protocol command, the 
+ * keyboard is enable to activate the motors with step mode:
+ * every button pression (of one given axe), cause the motor
+ * to increment/decrement the position of 1mm.
+ * 
+ * \important The 1mm step is a quantity not so accurate!  
+ * 
+ *  
+ */
 void motorCommandModeManagement(void){
     int distance;
     int abs_dm_distance;
@@ -661,18 +705,21 @@ void motorCommandModeManagement(void){
 }
 
 /**
- * This is the Service MOde management workflow routine.
+ * \addtogroup MOTMOD
+ * 
+ * ### SERVICE MODE MANAGEMENT
+ * 
+ * This is the Service worning mode management.
  * 
  * In service mode, some service command can be executed:
- * + MOTOR_SERVICE_CYCLE_TEST: executes an infinite set of cycles 
- * moving all the axes in and out positions.\n
- * The command terminates when a key button is pressed or a protocol command
- * is received;
+ * + MOTOR_SERVICE_CYCLE_TEST: executes an infinite set of cycles  moving all the axes in and out positions.
+ * The command terminates when a key button is pressed or a protocol command is received;
+ * When no command is in action, the motor driver is disabled as well the  safety power switch.
  * 
- * When no command is in action, the motor driver is disabled as well the 
- * safety power switch.
  *  
  */
+
+
 void motorServiceModeManagement(void){
     int distance;
     int abs_dm_distance;
@@ -682,12 +729,13 @@ void motorServiceModeManagement(void){
     {    
 
         // Disables the general enable 
-       uc_MOTOR_GENERAL_ENABLE_Set();
-       motorStruct.general_enable = true;
+        uc_MOTOR_GENERAL_ENABLE_Set();
+        motorStruct.general_enable = true;
 
-       // Disable the keyboard activation enable
-       uc_BUTTON_ENA_Clear();
-       motorStruct.keyboard.keyboard_enable = false;
+        // Disable the keyboard activation enable
+        uc_BUTTON_ENA_Clear();
+        motorStruct.keyboard.keyboard_enable = false;
+        motorStruct.keyboard.keystep = false;
 
         if(getKeyPressed()){
             motorStruct.service_mode.command = MOTOR_SERVICE_NO_COMMAND;
@@ -884,6 +932,7 @@ void motorInit(void){
     // Disable the keyboard activation enable
     uc_BUTTON_ENA_Clear();
     motorStruct.keyboard.keyboard_enable = false;
+    motorStruct.keyboard.keystep = false;
     
     motorStruct.abort_request = false;
     motorStruct.service_mode.command = 0;
@@ -901,7 +950,7 @@ void motorSetServiceMode(void){
     change_mode_request = true;
     change_mode = SERVICE_MODE;
     motorStruct.abort_request = false;
-    
+    motorStruct.keyboard.keystep = false;
    
 }
 
@@ -914,6 +963,7 @@ void motorSetDisableMode(void){
     change_mode_request = true;
     change_mode = DISABLE_MODE;
     motorStruct.abort_request = false;
+    motorStruct.keyboard.keystep = false;
 }
 
 /**
@@ -925,6 +975,7 @@ void motorSetCommandMode(void){
     change_mode_request = true;
     change_mode = COMMAND_MODE;
     motorStruct.abort_request = false;
+    motorStruct.keyboard.keystep = false;
 
 }
 
@@ -937,7 +988,7 @@ void motorSetCalibMode(void){
     change_mode_request = true;
     change_mode = CALIB_MODE;
     motorStruct.abort_request = false;
-    
+    motorStruct.keyboard.keystep = false;
 }
 
 /**
@@ -1008,4 +1059,15 @@ MOTOR_COMMAND_RESULTS_t  motorMoveZ(int tZdm){
 
 void motorAbort(void){
      motorStruct.abort_request = true;
+}
+
+
+bool  motorEnableKeyStepMode(unsigned char par){
+    if(par == 0) {
+        motorStruct.keyboard.keystep = false;
+        return true;
+    }
+    
+    if(motorStruct.exec_mode != COMMAND_MODE) return false;
+    motorStruct.keyboard.keystep = true;
 }

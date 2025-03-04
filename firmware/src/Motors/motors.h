@@ -102,6 +102,10 @@ ext MOTOR_COMMAND_RESULTS_t  motorMoveY(int tYdm);
 ext MOTOR_COMMAND_RESULTS_t  motorMoveZ(int tZdm);
 
 /// \ingroup MOTMOD
+/// Enables/Disables the KeyStep mode
+ext bool  motorEnableKeyStepMode(unsigned char par);
+
+/// \ingroup MOTMOD
 /// aborts a pending command
 ext void motorAbort(void);
 
@@ -164,7 +168,8 @@ typedef struct{
         bool ym;    //!< Y- button status
         bool zp;    //!< Z+ button status
         bool zm;    //!< X- button status
-        bool keyboard_enable;   //!< keyboard activation enable flag        
+        bool keyboard_enable;   //!< keyboard activation enable flag       
+        bool keystep;   //!< key step mode enable flag
     }keyboard;
    
     bool abort_request;//!< abort command request flag

@@ -53,7 +53,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
         /**
          * 
          * \addtogroup CANPROT 
-         * ## ABORT COMMAND
+         * ### ABORT COMMAND
          * 
          * This command aborts any pending command.
          * 
@@ -76,7 +76,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
         /**
          * 
          * \addtogroup CANPROT 
-         * ## ACTIVATE DISABLE MODE WORKFLOW
+         * ### ACTIVATE DISABLE MODE WORKFLOW
          * 
          * This command activates the Disable Mode Workflow.
          * 
@@ -99,7 +99,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
         /**
          * 
          * \addtogroup CANPROT 
-         * ## ACTIVATE COMMAND MODE WORKFLOW
+         * ### ACTIVATE COMMAND MODE WORKFLOW
          * 
          * This command activates the Command Mode Workflow.
          * 
@@ -122,7 +122,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
         /**
          * <div style="page-break-after: always;"></div>
          * \addtogroup CANPROT 
-         * ## ACTIVATE SERVICE MODE WORKFLOW
+         * ### ACTIVATE SERVICE MODE WORKFLOW
          * 
          * This command activates the Service Mode Workflow.
          * 
@@ -145,7 +145,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
          /**
          * 
          * \addtogroup CANPROT 
-         * ## ACTIVATE CALIBRATION MODE WORKFLOW
+         * ### ACTIVATE CALIBRATION MODE WORKFLOW
          * 
          * This command activates the Calibration Mode Workflow.
          * 
@@ -168,7 +168,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
         /**
          * <div style="page-break-after: always;"></div>
          * \addtogroup CANPROT 
-         * ## MOVE-X COMMAND
+         * ### MOVE-X COMMAND
          * 
          * This command activates the X to the target position.\n
          * The target position is passed to the command in 0.1mm/units
@@ -230,7 +230,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
          /**
          * <div style="page-break-after: always;"></div>
          * \addtogroup CANPROT 
-         * ## MOVE-Y COMMAND
+         * ### MOVE-Y COMMAND
          * 
          * This command activates the Y to the target position.\n
          * The target position is passed to the command in 0.1mm/units
@@ -292,7 +292,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
          /**
          * <div style="page-break-after: always;"></div>
          * \addtogroup CANPROT 
-         * ## MOVE-Z COMMAND
+         * ### MOVE-Z COMMAND
          * 
          * This command activates the Z to the target position.\n
          * The target position is passed to the command in 0.1mm/units
@@ -351,11 +351,39 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
             }
             break;
             
-        
+         /**
+         * <div style="page-break-after: always;"></div>
+         * \addtogroup CANPROT 
+         * ### CMD_ENABLE_KEYSTEP
+         * 
+         * This command enables/disables the Key Step mode.\n
+         * The command enable can only be executed in MOTOR COMMAND working mode.
+         * 
+         * @param cmd = \ref CMD_ENABLE_KEYSTEP;
+         * @param d0: 0=Disbaled; 1=Enabled;
+         * @param d1: not used
+         * @param d2: not used
+         * @param d3: not used
+         * @return
+         * 
+         */
+        case CMD_ENABLE_KEYSTEP:
+                        
+            if(motorEnableKeyStepMode(d0) == false){
+                /// \addtogroup CANPROT
+                /// \test In case of activation request if the working mode should not be the COMMAND_MODE:  ImmediateError(\ref MET_CAN_COMMAND_NOT_ENABLED)    
+                MET_Can_Protocol_returnCommandError(MET_CAN_COMMAND_NOT_ENABLED);
+            }else {
+                /// \addtogroup CANPROT
+                /// + ImmediateExecuted(0,0) in case of success.
+                MET_Can_Protocol_returnCommandExecuted(0,0);
+            }
+            break;
+            
         /**
          * <div style="page-break-after: always;"></div>
          * \addtogroup CANPROT 
-         * ## TEST CYCLE SERVICE COMMAND
+         * ### TEST CYCLE SERVICE COMMAND
          * 
          * This command activates a test cycle routine.
          * 
