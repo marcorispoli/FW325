@@ -61,7 +61,7 @@ typedef struct {
 /// Protocol Definition Data
 typedef enum{
     MET_CAN_APP_DEVICE_ID    =  0x15,      //!< Application DEVICE CAN Id address
-    MET_CAN_STATUS_REGISTERS =  3,        //!< Defines the total number of implemented STATUS registers 
+    MET_CAN_STATUS_REGISTERS =  4,        //!< Defines the total number of implemented STATUS registers 
     MET_CAN_DATA_REGISTERS   =  1,        //!< Defines the total number of implemented Application DATA registers 
     MET_CAN_PARAM_REGISTERS  =  0       //!< Defines the total number of implemented PARAMETER registers 
 }PROTOCOL_DEFINITION_DATA_t;
@@ -122,6 +122,7 @@ typedef enum{
   STATUS_MODE_IDX = 0, //!< Status Mode  
   STATUS_XY_POSITION_IDX = 1,//!< Status Position for the X and Y coordinate 
   STATUS_Z_POSITION_IDX = 2,//!< Status Position for the Z coordinate 
+  STATUS_ANALOG_IDX = 3,//!< Status Analog Inputs 
 }STATUS_INDEX_t;
 
 /**
@@ -151,10 +152,11 @@ typedef enum{
  * This is the enumeration of the NEEDLE ADAPTER IDENTIFIER
  */
 typedef enum{
-    NEEDLE_UNDETECTED = 0,     //!< No detected position
-    NEEDLE_A = 1,                  //!< Type A adapter
-    NEEDLE_B = 2,                  //!< Type B Adapter
-    NEEDLE_C = 3,                  //!< Type C adapter
+    NEEDLE_UNDETECTED = 0,    //!< No detected position
+    NEEDLE_A = 1,             //!< Type A adapter
+    NEEDLE_B = 2,             //!< Type B Adapter
+    NEEDLE_C = 3,             //!< Type C adapter
+    NEEDLE_DISCONNECTED = 4,  //!< The Slider is not mounted on the Y axis
 }STATUS_NEEDLE_t;
     
     /**
@@ -263,6 +265,16 @@ typedef enum{
         unsigned char SH; //!< High byte of the Slider Position 
     }STATUS_Z_POSITION_t;
     
+    /// \ingroup CANPROT
+    /// Status analog inputs
+    typedef struct {
+        const unsigned char idx;
+        unsigned char X_SCROLL;     //!< Analog XScroll
+        unsigned char NEEDLE_ID;    //!< Analog Needle Id
+        unsigned char MOTOR_POWER;  //!< Analog Motor Power Supply
+        unsigned char KEYBOARD;     //!< Keyboard activation status
+    }STATUS_ANALOG_t;
+    
     
     #ifdef _PROTOCOL_C
         /// \ingroup CANPROT
@@ -276,10 +288,16 @@ typedef enum{
         /// \ingroup CANPROT
         /// Declaration of the Status Z Position Register  global variables
         STATUS_Z_POSITION_t StatusZPositionRegister = {.idx=STATUS_Z_POSITION_IDX};
+        
+        /// \ingroup CANPROT
+        /// Declaration of the Status Analog Registers
+        STATUS_ANALOG_t StatusAnalogRegister = {.idx=STATUS_ANALOG_IDX};
+        
     #else
         extern STATUS_MODE_t StatusModeRegister;
         extern STATUS_XY_POSITION_t StatusXYPositionRegister;
         extern STATUS_Z_POSITION_t StatusZPositionRegister;
+        extern STATUS_ANALOG_t StatusAnalogRegister;
     #endif  
     
 //________________________________________ DATA REGISTER DEFINITION SECTION _   

@@ -136,9 +136,9 @@ void SYS_Initialize ( void* data )
     TCC0_PWMInitialize();
 
     ADC0_Initialize();
+    ADC1_Initialize();
     CAN0_Initialize();
 
-    ADC1_Initialize();
     RTC_Initialize();
 
 

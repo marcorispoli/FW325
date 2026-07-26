@@ -3,6 +3,7 @@
 #include "application.h"
 #include "motors.h"
 #include "Protocol/protocol.h"
+#include "../main.h"
 
 #define TIMER_TIC_us 7800
 #define TIME_us_TIC(x) (x/TIMER_TIC_us)
@@ -50,48 +51,6 @@ int change_mode;
 
 #define abs(x) (x<0) ? (-(x)): (x)
 
-/**
- * \ingroup MOTMOD
- * 
- * This function updates all together all the Protocol status 
- * register that depends by this module.
- * 
- * The following status are updated here:
- * + The WORKING_MODE status register;
- * + The POSITION status register;
- * 
- * This function is called in the MotorLoop() routine 
- * that is always called during the workflow after every workflow iteration.
- * 
- */
-static void motorUpdateStatus(void){
-    StatusModeRegister.mode = motorStruct.exec_mode;
-    StatusModeRegister.general_enable =  motorStruct.general_enable;
-    StatusModeRegister.keyboard_enable = motorStruct.keyboard.keyboard_enable;
-    StatusModeRegister.enable_feedback = uc_MOTOR_ENA_FEEDBACK_Get();
-    StatusModeRegister.disable_needle_feedback = uc_NEEDLE_ENA_FEEDBACK_Get();
-
-    // Updates the CAN Protocol registers
-    updateStatusRegister((void*) &StatusModeRegister);
-    
-    int val = motorStruct.sensors.x;
-    if(val<0) val = 0;
-    StatusXYPositionRegister.XL = (unsigned char) (val & 0x00FF);
-    StatusXYPositionRegister.XH = (unsigned char) ((val >> 8) & 0x00FF);
-    
-    val = motorStruct.sensors.y;
-    if(val<0) val = 0;
-    StatusXYPositionRegister.YL = (unsigned char) (val & 0x00FF);
-    StatusXYPositionRegister.YH = (unsigned char) ((val >> 8) & 0x00FF);
-    
-    val = motorStruct.sensors.z;
-    if(val<0) val = 0;
-    StatusZPositionRegister.ZL = (unsigned char) (val & 0x00FF);
-    StatusZPositionRegister.ZH = (unsigned char) ((val >> 8) & 0x00FF);
-
-    updateStatusRegister((void*) &StatusZPositionRegister);
-    
-}
 
 /**
  * \ingroup MOTMOD
@@ -107,7 +66,14 @@ static void motorGetX(){
     ADC0_ChannelSelect( ADC_POSINPUT_AIN5, ADC_NEGINPUT_GND );
     ADC0_ConversionStart();
     while(!ADC0_ConversionStatusGet());
-    motorStruct.sensors.x = (int) ADC0_ConversionResultGet() - 50;
+    deviceStruct.sensors.x = (int) ADC0_ConversionResultGet() - 50;
+    
+    int val = deviceStruct.sensors.x;
+    if(val<0) val = 0;
+    StatusXYPositionRegister.XL = (unsigned char) (val & 0x00FF);
+    StatusXYPositionRegister.XH = (unsigned char) ((val >> 8) & 0x00FF);
+
+    
     return;
 }
 
@@ -124,7 +90,13 @@ static void motorGetY(){
     ADC0_ChannelSelect( ADC_POSINPUT_AIN6, ADC_NEGINPUT_GND );
     ADC0_ConversionStart();
     while(!ADC0_ConversionStatusGet());
-    motorStruct.sensors.y = (int) ADC0_ConversionResultGet() - 50;
+    deviceStruct.sensors.y = (int) ADC0_ConversionResultGet() - 50;
+    
+    int val = deviceStruct.sensors.y;
+    if(val<0) val = 0;
+    StatusXYPositionRegister.YL = (unsigned char) (val & 0x00FF);
+    StatusXYPositionRegister.YH = (unsigned char) ((val >> 8) & 0x00FF);
+    
     return;
 }
 
@@ -140,9 +112,17 @@ static void motorGetZ(){
     ADC0_ChannelSelect( ADC_POSINPUT_AIN7, ADC_NEGINPUT_GND );
     ADC0_ConversionStart();
     while(!ADC0_ConversionStatusGet());    
-    motorStruct.sensors.z = (int) ADC0_ConversionResultGet() - 50;
+    deviceStruct.sensors.z = (int) ADC0_ConversionResultGet() - 50;
+    
+    int  val = deviceStruct.sensors.z;
+    if(val<0) val = 0;
+    StatusZPositionRegister.ZL = (unsigned char) (val & 0x00FF);
+    StatusZPositionRegister.ZH = (unsigned char) ((val >> 8) & 0x00FF);
+    
     return;
 }
+
+
 
 /**
  * \ingroup MOTMOD
@@ -283,26 +263,6 @@ static void motorDriverOutput(MOTOR_MODE_t mode){
 }
 
 
-/**
- * \ingroup MOTMOD
- * 
- * This function polls the keyboard inputs and provides 
- * the current pression event.
- * 
- * @return the key pressed event.
- */
-bool getKeyPressed(void){
-    
-    motorStruct.keyboard.xp = ! uc_BUTTON_XP_Get();
-    motorStruct.keyboard.xm = ! uc_BUTTON_XM_Get();
-    motorStruct.keyboard.yp = ! uc_BUTTON_YP_Get();
-    motorStruct.keyboard.ym = ! uc_BUTTON_YM_Get();
-    motorStruct.keyboard.zp = ! uc_BUTTON_ZP_Get();
-    motorStruct.keyboard.zm = ! uc_BUTTON_ZM_Get();
-    
-    return motorStruct.keyboard.xp || motorStruct.keyboard.xm || motorStruct.keyboard.yp || motorStruct.keyboard.ym || motorStruct.keyboard.zp || motorStruct.keyboard.zm;
-    
-}
 
 /**
  * \addtogroup MOTMOD
@@ -341,22 +301,19 @@ void motorDisableModeManagement(void){
     static int key_pressed_timer = 0;
     static bool activated = false;
     
-    // Disables the general enable 
-    uc_MOTOR_GENERAL_ENABLE_Clear();
-    motorStruct.general_enable = false;
+    // Disables the power switch
+    SetPowerSwitchStat(false);
     
     // Disable the keyboard activation enable
-    uc_BUTTON_ENA_Clear();
-    motorStruct.keyboard.keyboard_enable = false;
-    motorStruct.keyboard.keystep = false;
+    SetKeyMode(false,false);
     
-    // Motor disabled
+    // Motor Drivers disabled
     motorDriverOutput(MOTORS_DISABLED);
     
     // Wait for the button release
     if(activated){
         BUZZER_Set();
-        if(!getKeyPressed()){
+        if(!deviceStruct.keyboard.flags.key_present){
             BUZZER_Clear();
             activated = false;
             motorSetCalibMode();          
@@ -366,7 +323,7 @@ void motorDisableModeManagement(void){
     
     // Reads the status of the keyboard buttons: if the button is pressed
     // 1 second the working mode changes into the CALIB MODE     
-    if(getKeyPressed()) key_pressed_timer++;
+    if(deviceStruct.keyboard.flags.key_present) key_pressed_timer++;
     else key_pressed_timer = 0;
     
     if(key_pressed_timer > TIME_us_TIC(1000000)){
@@ -433,42 +390,39 @@ void motorCalibModeManagement(void){
     static bool activate_z = false;
     static int key_release_timer = 0;
     
-    // Disables the general enable 
-    uc_MOTOR_GENERAL_ENABLE_Set();
-    motorStruct.general_enable = true;
-    
-    // Disable the keyboard activation enable
-    uc_BUTTON_ENA_Set();
-    motorStruct.keyboard.keyboard_enable = true;
-    motorStruct.keyboard.keystep = false;
+    // Enable the power switch
+    SetPowerSwitchStat(true);
+
+    // Enable the keyboard
+    SetKeyMode(true,false);
     
     if(activate_x){
-        if(getKeyPressed()) key_release_timer = TIME_us_TIC(200000);
-        if(motorStruct.keyboard.xm){
-            if(motorStruct.sensors.x <= 0) motorDriverOutput(MOTOR_X_SHORT);
+        if(deviceStruct.keyboard.flags.key_present) key_release_timer = TIME_us_TIC(200000);
+        if(deviceStruct.keyboard.hw.xm){
+            if(deviceStruct.sensors.x <= 0) motorDriverOutput(MOTOR_X_SHORT);
             return;
-        }else if(motorStruct.keyboard.xp){
-            if(motorStruct.sensors.x >= Xdm_To_Units(DEFAULT_BUTTON_X_TRAVEL_dm)) motorDriverOutput(MOTOR_X_SHORT);
+        }else if(deviceStruct.keyboard.hw.xp){
+            if(deviceStruct.sensors.x >= Xdm_To_Units(DEFAULT_BUTTON_X_TRAVEL_dm)) motorDriverOutput(MOTOR_X_SHORT);
             return;
         }else  motorDriverOutput(MOTOR_X_SHORT);
         
     }else if(activate_y){
-        if(getKeyPressed()) key_release_timer = TIME_us_TIC(200000);
-        if(motorStruct.keyboard.ym){
-            if(motorStruct.sensors.y <= 0) motorDriverOutput(MOTOR_Y_SHORT);
+        if(deviceStruct.keyboard.flags.key_present) key_release_timer = TIME_us_TIC(200000);
+        if(deviceStruct.keyboard.hw.ym){
+            if(deviceStruct.sensors.y <= 0) motorDriverOutput(MOTOR_Y_SHORT);
             return;
-        }else if(motorStruct.keyboard.yp){
-            if(motorStruct.sensors.y >= Ydm_To_Units(DEFAULT_BUTTON_Y_TRAVEL_dm)) motorDriverOutput(MOTOR_Y_SHORT);
+        }else if(deviceStruct.keyboard.hw.yp){
+            if(deviceStruct.sensors.y >= Ydm_To_Units(DEFAULT_BUTTON_Y_TRAVEL_dm)) motorDriverOutput(MOTOR_Y_SHORT);
             return;
         }else motorDriverOutput(MOTOR_Y_SHORT);        
     }
     else if(activate_z){
-        if(getKeyPressed()) key_release_timer = TIME_us_TIC(200000);        
-        if(motorStruct.keyboard.zm){
-            if(motorStruct.sensors.z <= 0) motorDriverOutput(MOTOR_Z_SHORT);
+        if(deviceStruct.keyboard.flags.key_present) key_release_timer = TIME_us_TIC(200000);        
+        if(deviceStruct.keyboard.hw.zm){
+            if(deviceStruct.sensors.z <= 0) motorDriverOutput(MOTOR_Z_SHORT);
             return;
-        }else if(motorStruct.keyboard.zp){
-            if(motorStruct.sensors.z >= Zdm_To_Units(DEFAULT_BUTTON_Z_TRAVEL_dm)) motorDriverOutput(MOTOR_Z_SHORT);
+        }else if(deviceStruct.keyboard.hw.zp){
+            if(deviceStruct.sensors.z >= Zdm_To_Units(DEFAULT_BUTTON_Z_TRAVEL_dm)) motorDriverOutput(MOTOR_Z_SHORT);
             return;
         }else motorDriverOutput(MOTOR_Z_SHORT);
         
@@ -488,7 +442,7 @@ void motorCalibModeManagement(void){
     }
     
     
-    if(!getKeyPressed()){
+    if(!deviceStruct.keyboard.flags.key_present){
         motorDriverOutput(MOTORS_DISABLED);
         
         if(keep_alive_timer == 0){
@@ -499,41 +453,41 @@ void motorCalibModeManagement(void){
     
     keep_alive_timer = MOTOR_CALIB_MODE_KEEP_ALIVE_s;
     
-    if(motorStruct.keyboard.zm){                
-        if(motorStruct.sensors.z > 0){
+    if(deviceStruct.keyboard.hw.zm){                
+        if(deviceStruct.sensors.z > 0){
             motorDriverOutput(MOTOR_Z_UP);
             activate_z = true;
         }
         
-    }else if(motorStruct.keyboard.zp){  
-        if(motorStruct.sensors.z < Zdm_To_Units(DEFAULT_BUTTON_Z_TRAVEL_dm)){
+    }else if(deviceStruct.keyboard.hw.zp){  
+        if(deviceStruct.sensors.z < Zdm_To_Units(DEFAULT_BUTTON_Z_TRAVEL_dm)){
             activate_z = true;
             motorDriverOutput(MOTOR_Z_DOWN);
         }
         
         
-    }else if(motorStruct.keyboard.ym){
+    }else if(deviceStruct.keyboard.hw.ym){
         
-        if(motorStruct.sensors.y > 0){
+        if(deviceStruct.sensors.y > 0){
             motorDriverOutput(MOTOR_Y_HOME);
             activate_y = true;
         }     
         
-    }else if(motorStruct.keyboard.yp){
+    }else if(deviceStruct.keyboard.hw.yp){
         
-         if(motorStruct.sensors.y < Ydm_To_Units(DEFAULT_BUTTON_Y_TRAVEL_dm)){
+         if(deviceStruct.sensors.y < Ydm_To_Units(DEFAULT_BUTTON_Y_TRAVEL_dm)){
             motorDriverOutput(MOTOR_Y_FIELD);
             activate_y = true;
         }
-    }else if(motorStruct.keyboard.xm){
+    }else if(deviceStruct.keyboard.hw.xm){
         
-         if(motorStruct.sensors.x > 0){
+         if(deviceStruct.sensors.x > 0){
             motorDriverOutput(MOTOR_X_RIGHT);
             activate_x = true;
         }         
-    }else if(motorStruct.keyboard.xp){
+    }else if(deviceStruct.keyboard.hw.xp){
         
-        if(motorStruct.sensors.x < Xdm_To_Units(DEFAULT_BUTTON_X_TRAVEL_dm)){
+        if(deviceStruct.sensors.x < Xdm_To_Units(DEFAULT_BUTTON_X_TRAVEL_dm)){
             motorDriverOutput(MOTOR_X_LEFT);
             activate_x = true;
         }
@@ -588,9 +542,8 @@ void motorCommandModeManagement(void){
     int abs_dm_distance;
     static int min_power = 0;
     
-    // keeps enabled the power switch
-    uc_MOTOR_GENERAL_ENABLE_Set();
-    motorStruct.general_enable = true;
+    // Enable the Power Switch
+    SetPowerSwitchStat(true);
 
     // No activation pending: the activation can be executed by the keyboard if enabled
     if(motorStruct.command_mode.command == MOTOR_COMMAND_NO_COMMAND){
@@ -615,14 +568,14 @@ void motorCommandModeManagement(void){
         }
         
         // Sets the distance and the selected power
-        distance = motorStruct.command_mode.tx - motorStruct.sensors.x;
+        distance = motorStruct.command_mode.tx - deviceStruct.sensors.x;
         abs_dm_distance = X_To_dm(abs(distance));
         motorSetPower(getPowerFromDistance(abs_dm_distance,min_power));
         
         // Verifies the target
         if(abs_dm_distance < 2 ){
             motorDriverOutput(MOTOR_X_SHORT);
-            int pos = X_To_dm(motorStruct.sensors.x);
+            int pos = X_To_dm(deviceStruct.sensors.x);
             unsigned char xl = (unsigned char) (pos & 0xff);
             unsigned char xh = (unsigned char) ((pos>>8) & 0xff);
             MET_Can_Protocol_returnCommandExecuted(xl,xh);
@@ -647,14 +600,14 @@ void motorCommandModeManagement(void){
         }
         
         // Sets the distance and the selected power
-        distance = motorStruct.command_mode.ty - motorStruct.sensors.y;
+        distance = motorStruct.command_mode.ty - deviceStruct.sensors.y;
         abs_dm_distance = Y_To_dm(abs(distance));
         motorSetPower(getPowerFromDistance(abs_dm_distance,min_power));
         
         // Verifies the target
         if(abs_dm_distance < 2 ){
             motorDriverOutput(MOTOR_Y_SHORT);
-            int pos = Y_To_dm(motorStruct.sensors.y);
+            int pos = Y_To_dm(deviceStruct.sensors.y);
             unsigned char yl = (unsigned char) (pos & 0xff);
             unsigned char yh = (unsigned char) ((pos>>8) & 0xff);
             MET_Can_Protocol_returnCommandExecuted(yl,yh);
@@ -677,14 +630,14 @@ void motorCommandModeManagement(void){
         }
         
         // Sets the distance and the selected power
-        distance = motorStruct.command_mode.tz - motorStruct.sensors.z;
+        distance = motorStruct.command_mode.tz - deviceStruct.sensors.z;
         abs_dm_distance = Z_To_dm(abs(distance));
         motorSetPower(getPowerFromDistance(abs_dm_distance,min_power));
         
         // Verifies the target
         if(abs_dm_distance < 2 ){
             motorDriverOutput(MOTOR_Z_SHORT);
-            int pos = Z_To_dm(motorStruct.sensors.z);
+            int pos = Z_To_dm(deviceStruct.sensors.z);
             unsigned char zl = (unsigned char) (pos & 0xff);
             unsigned char zh = (unsigned char) ((pos>>8) & 0xff);
             MET_Can_Protocol_returnCommandExecuted(zl,zh);
@@ -728,16 +681,13 @@ void motorServiceModeManagement(void){
     if(motorStruct.service_mode.command == MOTOR_SERVICE_CYCLE_TEST)
     {    
 
-        // Disables the general enable 
-        uc_MOTOR_GENERAL_ENABLE_Set();
-        motorStruct.general_enable = true;
+        // Enable The Power Switch
+        SetPowerSwitchStat(true);
 
         // Disable the keyboard activation enable
-        uc_BUTTON_ENA_Clear();
-        motorStruct.keyboard.keyboard_enable = false;
-        motorStruct.keyboard.keystep = false;
+        SetKeyMode(false,false);
 
-        if(getKeyPressed()){
+        if(deviceStruct.keyboard.flags.key_present){
             motorStruct.service_mode.command = MOTOR_SERVICE_NO_COMMAND;
             motorDriverOutput(MOTORS_DISABLED);
             return;
@@ -751,9 +701,9 @@ void motorServiceModeManagement(void){
 
             case 1: // Move Z up to 10
                 
-                if(motorStruct.sensors.z > Zdm_To_Units(100)){  
+                if(deviceStruct.sensors.z > Zdm_To_Units(100)){  
                     min_power = 2;
-                    distance = Zdm_To_Units(100) - motorStruct.sensors.z;
+                    distance = Zdm_To_Units(100) - deviceStruct.sensors.z;
                     abs_dm_distance = Z_To_dm(abs(distance));
                     motorSetPower(getPowerFromDistance(abs_dm_distance,min_power));
                     motorDriverOutput(MOTOR_Z_UP);
@@ -764,9 +714,9 @@ void motorServiceModeManagement(void){
                 break;
 
             case 2: // Move X to 240
-                if(motorStruct.sensors.x < Xdm_To_Units(2400)){  
+                if(deviceStruct.sensors.x < Xdm_To_Units(2400)){  
                     min_power = 0;
-                    distance = Xdm_To_Units(2400) - motorStruct.sensors.x;
+                    distance = Xdm_To_Units(2400) - deviceStruct.sensors.x;
                     abs_dm_distance = X_To_dm(abs(distance));
                     motorSetPower(getPowerFromDistance(abs_dm_distance,min_power));
                     motorDriverOutput(MOTOR_X_LEFT);
@@ -777,9 +727,9 @@ void motorServiceModeManagement(void){
                 break;
 
            case 3: // Move Y to 60
-               if(motorStruct.sensors.y < Ydm_To_Units(600)){  
+               if(deviceStruct.sensors.y < Ydm_To_Units(600)){  
                    min_power = 0;
-                   distance = Ydm_To_Units(600) - motorStruct.sensors.y;
+                   distance = Ydm_To_Units(600) - deviceStruct.sensors.y;
                    abs_dm_distance = Y_To_dm(abs(distance));
                    motorSetPower(getPowerFromDistance(abs_dm_distance,min_power));
                    motorDriverOutput(MOTOR_Y_FIELD);
@@ -790,9 +740,9 @@ void motorServiceModeManagement(void){
            break;
 
            case 4: // Move Y to 0
-               if(motorStruct.sensors.y > 0){  
+               if(deviceStruct.sensors.y > 0){  
                    min_power = 0;
-                   distance = 0 - motorStruct.sensors.y;
+                   distance = 0 - deviceStruct.sensors.y;
                    abs_dm_distance = Y_To_dm(abs(distance));
                    motorSetPower(getPowerFromDistance(abs_dm_distance,min_power));
                    motorDriverOutput(MOTOR_Y_HOME);
@@ -803,9 +753,9 @@ void motorServiceModeManagement(void){
            break;
 
            case 5: // Move X to 0
-           if(motorStruct.sensors.x > 0){  
+           if(deviceStruct.sensors.x > 0){  
                 min_power = 0;
-                distance = 0 - motorStruct.sensors.x;
+                distance = 0 - deviceStruct.sensors.x;
                 abs_dm_distance = X_To_dm(abs(distance));
                 motorSetPower(getPowerFromDistance(abs_dm_distance,min_power));
                 motorDriverOutput(MOTOR_X_RIGHT);
@@ -816,9 +766,9 @@ void motorServiceModeManagement(void){
            break;
 
            case 6: // Move Z up to 100
-               if(motorStruct.sensors.z < Zdm_To_Units(1000)){  
+               if(deviceStruct.sensors.z < Zdm_To_Units(1000)){  
                    min_power = 0;
-                   distance = Zdm_To_Units(1000) - motorStruct.sensors.z;
+                   distance = Zdm_To_Units(1000) - deviceStruct.sensors.z;
                    abs_dm_distance = Z_To_dm(abs(distance));
                    motorSetPower(getPowerFromDistance(abs_dm_distance,min_power));
                    motorDriverOutput(MOTOR_Z_UP);
@@ -836,13 +786,11 @@ void motorServiceModeManagement(void){
 
     }else{
 
-        // Disables the general enable 
-       uc_MOTOR_GENERAL_ENABLE_Clear();
-       motorStruct.general_enable = false;
+       // Disables the Power switch
+       SetPowerSwitchStat(false);
 
        // Disable the keyboard activation enable
-       uc_BUTTON_ENA_Clear();
-       motorStruct.keyboard.keyboard_enable = false;
+       SetKeyMode(false,false);
 
        // Disables the motor driver
        motorDriverOutput(MOTORS_DISABLED);
@@ -862,7 +810,9 @@ void motorServiceModeManagement(void){
  */
 void motorLoop(void){
     
-    // Always gets the XYZ
+   
+      
+    // REads the sensors
     motorGetXYZ(); 
     
     // Handles the execution mode
@@ -875,12 +825,15 @@ void motorLoop(void){
     
     if(change_mode_request){
         change_mode_request = false;
-        motorStruct.exec_mode = change_mode;
+        StatusModeRegister.mode = motorStruct.exec_mode = change_mode;
         
         motorStruct.service_mode.sequence = 0;
         motorStruct.service_mode.command = 0;
         motorStruct.command_mode.sequence = 0;
         motorStruct.command_mode.command = 0;
+        
+        // Disables The Keyboard
+        SetKeyMode(false,false);
         
         // Initializations
         if(motorStruct.exec_mode == CALIB_MODE){
@@ -892,9 +845,9 @@ void motorLoop(void){
             motorDriverOutput(MOTORS_DISABLED);
         }
     }
-     
-    // At loop completion updates the can protocol registers
-    motorUpdateStatus();  
+    
+    // Gets the current outputs and update the motor stat
+    StatusModeRegister.power_sw_status = deviceStruct.power_sw_stat = uc_MOTOR_ENA_FEEDBACK_Get();
     
 }
 
@@ -920,25 +873,19 @@ void motorInit(void){
     
     // Sets the initial operating mode
     motorStruct.exec_mode = (int) DISABLE_MODE;
+    StatusModeRegister.mode = motorStruct.exec_mode;
     
     // Disables the driver and set low the motor power
     motorDriverOutput(MOTORS_DISABLED);
     motorSetPower(0);
     
     // Disables the general enable 
-    uc_MOTOR_GENERAL_ENABLE_Clear();
-    motorStruct.general_enable = false;
-    
-    // Disable the keyboard activation enable
-    uc_BUTTON_ENA_Clear();
-    motorStruct.keyboard.keyboard_enable = false;
-    motorStruct.keyboard.keystep = false;
+    SetPowerSwitchStat(false);
     
     motorStruct.abort_request = false;
     motorStruct.service_mode.command = 0;
     motorStruct.command_mode.command = 0;
     
-    motorUpdateStatus();    
 }
 
 /**
@@ -947,11 +894,16 @@ void motorInit(void){
  * The workflow will change at the next MotorLoop() execution.
  */
 void motorSetServiceMode(void){
+    unsigned char target_status = SERVICE_MODE;
+    
+    // Already in the target status or already in changing mode to target status
+    if(motorStruct.exec_mode == target_status) return;
+    if((change_mode_request) && (change_mode == target_status)) return;    
     change_mode_request = true;
-    change_mode = SERVICE_MODE;
+    change_mode = target_status;
+    
     motorStruct.abort_request = false;
-    motorStruct.keyboard.keystep = false;
-   
+    
 }
 
 /**
@@ -960,10 +912,16 @@ void motorSetServiceMode(void){
  * The workflow will change at the next MotorLoop() execution.
  */
 void motorSetDisableMode(void){
+    unsigned char target_status = DISABLE_MODE;
+    
+    // Already in the target status or already in changing mode to target status
+    if(motorStruct.exec_mode == target_status) return;
+    if((change_mode_request) && (change_mode == target_status)) return;    
     change_mode_request = true;
-    change_mode = DISABLE_MODE;
+    change_mode = target_status;
+
     motorStruct.abort_request = false;
-    motorStruct.keyboard.keystep = false;
+  
 }
 
 /**
@@ -972,11 +930,16 @@ void motorSetDisableMode(void){
  * The workflow will change at the next MotorLoop() execution.
  */
 void motorSetCommandMode(void){
+     unsigned char target_status = COMMAND_MODE;
+    
+    // Already in the target status or already in changing mode to target status
+    if(motorStruct.exec_mode == target_status) return;
+    if((change_mode_request) && (change_mode == target_status)) return;    
     change_mode_request = true;
-    change_mode = COMMAND_MODE;
+    change_mode = target_status;
+    
     motorStruct.abort_request = false;
-    motorStruct.keyboard.keystep = false;
-
+    
 }
 
 /**
@@ -985,10 +948,17 @@ void motorSetCommandMode(void){
  * The workflow will change at the next MotorLoop() execution.
  */
 void motorSetCalibMode(void){
+    unsigned char target_status = CALIB_MODE;
+    
+    // Already in the target status or already in changing mode to target status
+    if(motorStruct.exec_mode == target_status) return;
+    if((change_mode_request) && (change_mode == target_status)) return;    
     change_mode_request = true;
-    change_mode = CALIB_MODE;
+    change_mode = target_status;
+    
+  
     motorStruct.abort_request = false;
-    motorStruct.keyboard.keystep = false;
+  
 }
 
 /**
@@ -1012,13 +982,12 @@ bool motorServiceTestCycle(void){
 
 MOTOR_COMMAND_RESULTS_t  motorMoveX(int tXdm){
     if(tXdm > MAX_X_POSITION_dm) return MOTOR_ERROR_INVALID_POSITION;
-    int pos = X_To_dm(motorStruct.sensors.x);    
+    int pos = X_To_dm(deviceStruct.sensors.x);    
     if( (tXdm > pos - 5) && (tXdm < pos + 5))  return MOTOR_ALREADY_IN_POSITION;
     
     
-    if(motorStruct.exec_mode != COMMAND_MODE) return MOTOR_ERROR_INVALID_MODE;    
-    motorStruct.enable_feedback = uc_MOTOR_ENA_FEEDBACK_Get();
-    if(motorStruct.enable_feedback == false) return MOTOR_ERROR_DISABLE_CONDITION;
+    if(motorStruct.exec_mode != COMMAND_MODE) return MOTOR_ERROR_INVALID_MODE;        
+    if(deviceStruct.power_sw_stat == false) return MOTOR_ERROR_DISABLE_CONDITION;
     if(motorStruct.command_mode.command != MOTOR_COMMAND_NO_COMMAND) return MOTOR_ERROR_BUSY;
             
     // Command accepted
@@ -1028,12 +997,11 @@ MOTOR_COMMAND_RESULTS_t  motorMoveX(int tXdm){
 }
 MOTOR_COMMAND_RESULTS_t  motorMoveY(int tYdm){
     if(tYdm > MAX_Y_POSITION_dm) return MOTOR_ERROR_INVALID_POSITION;
-    int pos = Y_To_dm(motorStruct.sensors.y);    
+    int pos = Y_To_dm(deviceStruct.sensors.y);    
     if( (tYdm > pos - 5) && (tYdm < pos + 5))  return MOTOR_ALREADY_IN_POSITION;
 
     if(motorStruct.exec_mode != COMMAND_MODE) return MOTOR_ERROR_INVALID_MODE;    
-    motorStruct.enable_feedback = uc_MOTOR_ENA_FEEDBACK_Get();
-    if(motorStruct.enable_feedback == false) return MOTOR_ERROR_DISABLE_CONDITION;
+    if(deviceStruct.power_sw_stat == false) return MOTOR_ERROR_DISABLE_CONDITION;
     if(motorStruct.command_mode.command != MOTOR_COMMAND_NO_COMMAND) return MOTOR_ERROR_BUSY;
     
     // Command accepted
@@ -1043,12 +1011,11 @@ MOTOR_COMMAND_RESULTS_t  motorMoveY(int tYdm){
 }
 MOTOR_COMMAND_RESULTS_t  motorMoveZ(int tZdm){
     if(tZdm > MAX_Z_POSITION_dm) return MOTOR_ERROR_INVALID_POSITION;
-    int pos = Z_To_dm(motorStruct.sensors.z);    
+    int pos = Z_To_dm(deviceStruct.sensors.z);    
     if( (tZdm > pos - 5) && (tZdm < pos + 5))  return MOTOR_ALREADY_IN_POSITION;
     
     if(motorStruct.exec_mode != COMMAND_MODE) return MOTOR_ERROR_INVALID_MODE; 
-    motorStruct.enable_feedback = uc_MOTOR_ENA_FEEDBACK_Get();
-    if(motorStruct.enable_feedback == false) return MOTOR_ERROR_DISABLE_CONDITION;
+    if(deviceStruct.power_sw_stat == false) return MOTOR_ERROR_DISABLE_CONDITION;
     if(motorStruct.command_mode.command != MOTOR_COMMAND_NO_COMMAND) return MOTOR_ERROR_BUSY;
     
     // Command accepted
@@ -1064,10 +1031,11 @@ void motorAbort(void){
 
 bool  motorEnableKeyStepMode(unsigned char par){
     if(par == 0) {
-        motorStruct.keyboard.keystep = false;
+        SetKeyMode(false,false);
         return true;
     }
     
     if(motorStruct.exec_mode != COMMAND_MODE) return false;
-    motorStruct.keyboard.keystep = true;
+    SetKeyMode(true,true);
+    return true;
 }

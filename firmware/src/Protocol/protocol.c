@@ -37,6 +37,12 @@ void ApplicationProtocolInit ( void )
  */
 void inline ApplicationProtocolLoop(void){
     
+    // Updates the registers 
+    updateStatusRegister((void*) &StatusModeRegister);
+    updateStatusRegister((void*) &StatusXYPositionRegister);
+    updateStatusRegister((void*) &StatusZPositionRegister);
+    updateStatusRegister((void*) &StatusAnalogRegister);
+    
     // Handles the transmission/reception protocol
     MET_Can_Protocol_Loop();        
     

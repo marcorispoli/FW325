@@ -252,6 +252,7 @@
       <itemPath>../src/license.h</itemPath>
       <itemPath>../src/Motors/motors.c</itemPath>
       <itemPath>../src/Motors/motors.h</itemPath>
+      <itemPath>../src/main.h</itemPath>
     </logicalFolder>
   </logicalFolder>
   <sourceRootList>
