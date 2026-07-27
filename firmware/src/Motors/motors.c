@@ -130,6 +130,7 @@ static void motorGetZ(){
  * According with the ADC0 module setting, the routine takes about 21us to completes.
  */
 static void motorGetXYZ(){
+    
     motorGetX();
     motorGetY();
     motorGetZ();    
@@ -312,13 +313,14 @@ void motorDisableModeManagement(void){
     
     // Wait for the button release
     if(activated){
-        BUZZER_Set();
+        
         if(!deviceStruct.keyboard.flags.key_present){
-            BUZZER_Clear();
+            //BUZZER_Clear();
             activated = false;
             motorSetCalibMode();          
             return;
         }
+        return;
     }
     
     // Reads the status of the keyboard buttons: if the button is pressed
@@ -327,6 +329,7 @@ void motorDisableModeManagement(void){
     else key_pressed_timer = 0;
     
     if(key_pressed_timer > TIME_us_TIC(1000000)){
+        BuzzerSet(2,5,5);
         activated = true;
     }
     return;    
@@ -389,7 +392,8 @@ void motorCalibModeManagement(void){
     static bool activate_y = false;
     static bool activate_z = false;
     static int key_release_timer = 0;
-    
+    static int sens_obstacle = 0;
+    if(sens_obstacle>10000) return;
     // Enable the power switch
     SetPowerSwitchStat(true);
 
@@ -441,11 +445,12 @@ void motorCalibModeManagement(void){
         return;
     }
     
-    
+    /// GEstione dell'attivazione dei motori
     if(!deviceStruct.keyboard.flags.key_present){
         motorDriverOutput(MOTORS_DISABLED);
         
         if(keep_alive_timer == 0){
+            BuzzerSet(1,20,5);
             motorSetDisableMode();
         }
         return;
@@ -455,12 +460,14 @@ void motorCalibModeManagement(void){
     
     if(deviceStruct.keyboard.hw.zm){                
         if(deviceStruct.sensors.z > 0){
+            sens_obstacle = deviceStruct.sensors.z; 
             motorDriverOutput(MOTOR_Z_UP);
             activate_z = true;
         }
         
     }else if(deviceStruct.keyboard.hw.zp){  
         if(deviceStruct.sensors.z < Zdm_To_Units(DEFAULT_BUTTON_Z_TRAVEL_dm)){
+            sens_obstacle = deviceStruct.sensors.z;
             activate_z = true;
             motorDriverOutput(MOTOR_Z_DOWN);
         }
@@ -470,24 +477,28 @@ void motorCalibModeManagement(void){
         
         if(deviceStruct.sensors.y > 0){
             motorDriverOutput(MOTOR_Y_HOME);
+            sens_obstacle = deviceStruct.sensors.y;
             activate_y = true;
         }     
         
     }else if(deviceStruct.keyboard.hw.yp){
         
          if(deviceStruct.sensors.y < Ydm_To_Units(DEFAULT_BUTTON_Y_TRAVEL_dm)){
+            sens_obstacle = deviceStruct.sensors.y;
             motorDriverOutput(MOTOR_Y_FIELD);
             activate_y = true;
         }
     }else if(deviceStruct.keyboard.hw.xm){
         
          if(deviceStruct.sensors.x > 0){
+            sens_obstacle = deviceStruct.sensors.x;
             motorDriverOutput(MOTOR_X_RIGHT);
             activate_x = true;
         }         
     }else if(deviceStruct.keyboard.hw.xp){
         
         if(deviceStruct.sensors.x < Xdm_To_Units(DEFAULT_BUTTON_X_TRAVEL_dm)){
+            sens_obstacle = deviceStruct.sensors.x;
             motorDriverOutput(MOTOR_X_LEFT);
             activate_x = true;
         }
@@ -564,6 +575,7 @@ void motorCommandModeManagement(void){
             MET_Can_Protocol_returnCommandAborted();
             motorDriverOutput(MOTORS_DISABLED);
             motorStruct.command_mode.command = MOTOR_COMMAND_NO_COMMAND;
+            BuzzerSet(3,5,5);
             return;
         }
         
@@ -596,6 +608,7 @@ void motorCommandModeManagement(void){
             MET_Can_Protocol_returnCommandAborted();
             motorDriverOutput(MOTORS_DISABLED);
             motorStruct.command_mode.command = MOTOR_COMMAND_NO_COMMAND;
+            BuzzerSet(3,5,5);
             return;
         }
         
@@ -626,6 +639,7 @@ void motorCommandModeManagement(void){
             MET_Can_Protocol_returnCommandAborted();
             motorDriverOutput(MOTORS_DISABLED);
             motorStruct.command_mode.command = MOTOR_COMMAND_NO_COMMAND;
+            BuzzerSet(3,5,5);
             return;
         }
         

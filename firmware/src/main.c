@@ -38,7 +38,10 @@ struct {
   bool status;
 }powerLight;
 
-
+static BUZZER_t buzzerStruct;
+static void BuzzerInit(void);
+static void Buzzerhandle(void);
+ 
 void powerLightInit(int period){
     uc_LAMP_ON_Set();
     powerLight.status = false;
@@ -107,6 +110,8 @@ int main ( void )
     
     motorInit();
     
+    BuzzerInit();
+    
     // Sets the the frequency of PWM to 20 kHz
     // Funzione comunque non più utilizzata in quest'applicazione 
     powerLightInit(150);
@@ -120,7 +125,6 @@ int main ( void )
         // Protocol management
         ApplicationProtocolLoop();
         
-    
         if(trigger_time & _1024_ms_TriggerTime){
             trigger_time &=~ _1024_ms_TriggerTime;            
             motor1sLoop();         
@@ -138,6 +142,7 @@ int main ( void )
             trigger_time &=~ _15_64_ms_TriggerTime;      
             
             GetSHSensor();
+            Buzzerhandle();
            
         }
         
@@ -148,6 +153,7 @@ int main ( void )
             NeedleIdDetection();
             YFlipDetection();
             KeyboardHandler();
+            
         }
         
     }
@@ -198,6 +204,8 @@ void XScrollDetection(void){
         debounce = XSCROLL_DEBOUNCE;
         
         // Buzzer Sound Here
+        if(StatusModeRegister.xscroll_code == XSCROLL_UNDETECTED) BuzzerSet(3,3,3);
+        else BuzzerSet(1,20,5);
         return;
     }
     
@@ -208,7 +216,8 @@ void XScrollDetection(void){
 void YFlipDetection(void){
     static int debounce = YFLIP_DEBOUNCE; // About 500ms
     
-    bool input_stat = uc_YRIB_Get();
+    // The signal goes to 0V when Y is UP
+    bool input_stat = !uc_YRIB_Get();
     if(input_stat == deviceStruct.Yup){
         debounce = YFLIP_DEBOUNCE;
         StatusModeRegister.y_up_detected = deviceStruct.Yup;
@@ -222,7 +231,10 @@ void YFlipDetection(void){
         StatusModeRegister.y_up_detected = deviceStruct.Yup = input_stat;
         debounce = YFLIP_DEBOUNCE;
         
-        // Buzzer Sound Here
+        // Buzzer Sound Here: 1 pulse for Up, 2 pulses for down
+        if(deviceStruct.Yup) BuzzerSet(1,20,5);
+        else BuzzerSet(2,5,5);
+        
         return;
     }
     
@@ -340,12 +352,12 @@ void GetSHSensor(){
 void KeyboardHandler(void){
     
     // Upgrades the current keyboard hardware status
-    deviceStruct.keyboard.hw.xp =  uc_BUTTON_XP_Get();
-    deviceStruct.keyboard.hw.xm =  uc_BUTTON_XM_Get();
-    deviceStruct.keyboard.hw.yp =  uc_BUTTON_YP_Get();
-    deviceStruct.keyboard.hw.ym =  uc_BUTTON_YM_Get();
-    deviceStruct.keyboard.hw.zp =  uc_BUTTON_ZP_Get();
-    deviceStruct.keyboard.hw.zm =  uc_BUTTON_ZM_Get();
+    deviceStruct.keyboard.hw.xp =  !uc_BUTTON_XP_Get();
+    deviceStruct.keyboard.hw.xm =  !uc_BUTTON_XM_Get();
+    deviceStruct.keyboard.hw.yp =  !uc_BUTTON_YP_Get();
+    deviceStruct.keyboard.hw.ym =  !uc_BUTTON_YM_Get();
+    deviceStruct.keyboard.hw.zp =  !uc_BUTTON_ZP_Get();
+    deviceStruct.keyboard.hw.zm =  !uc_BUTTON_ZM_Get();
     StatusAnalogRegister.KEYBOARD = *((unsigned char*) &deviceStruct.keyboard.hw);
     
     // Upgrade the flags
@@ -390,6 +402,48 @@ void SetPowerSwitchStat(bool stat){
     StatusModeRegister.power_sw_general_enable =  deviceStruct.general_enable_stat = stat; 
     return;
 }
+
+void BuzzerInit(void){
+    buzzerStruct.num_pulses = 0;
+    buzzerStruct.status = false;
+    buzzerStruct.timer = 0;
+    BUZZER_Clear();
+}
+void BuzzerSet(int pulses, int ton, int toff){
+    if(buzzerStruct.status) return;
+    if(pulses <=0) return;
+    
+    buzzerStruct.timer = 0;
+    buzzerStruct.ton=ton;
+    buzzerStruct.toff=toff;
+    buzzerStruct.num_pulses=pulses;
+    buzzerStruct.status = true;
+    return;
+}
+
+void Buzzerhandle(void){
+    
+    if(!buzzerStruct.status){ 
+        BUZZER_Clear();
+        return;
+    }
+    
+    if(buzzerStruct.timer < buzzerStruct.ton){
+        BUZZER_Set();
+    }else if(buzzerStruct.timer < buzzerStruct.ton + buzzerStruct.toff){
+        BUZZER_Clear();
+    }else{
+        buzzerStruct.num_pulses--;
+        buzzerStruct.timer = 0;
+        
+        if(!buzzerStruct.num_pulses) buzzerStruct.status = false;
+        return;
+    }
+    
+    buzzerStruct.timer++;
+    return;
+}
+
 /** @}*/
 /*******************************************************************************
  End of File

@@ -2,7 +2,7 @@
 
 manifest_file_version: 1.0.0
 project: FW325
-creation_date: 2026-07-26T22:07:43.670+02:00[Europe/Berlin]
+creation_date: 2026-07-27T13:35:23.506+02:00[Europe/Berlin]
 operating_system: Windows 10
 mcc_mode: IDE
 mcc_mode_version: v6.20
@@ -10,7 +10,7 @@ device_name: ATSAME51J20A
 compiler: XC32 4.45
 mcc_version: 5.5.1
 mcc_core_version: 5.6.1
-content_manager_version: 4.3.2
+content_manager_version: 4.3.1
 is_mcc_offline: false
 is_using_prerelease_versions: false
 mcc_content_registries: https://registry.npmjs.org/

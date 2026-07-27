@@ -60,8 +60,18 @@ typedef struct{
     
 }DEVICE_t;
 
+typedef struct{
+    bool status;
+    int timer;
+    int ton;
+    int toff;
+    int num_pulses;
+    
+}BUZZER_t;
+
 ext DEVICE_t deviceStruct; 
 ext void SetKeyMode(bool enable, bool step_mode);
 ext void SetPowerSwitchStat(bool stat);
+ext void BuzzerSet(int pulses, int ton, int toff);
 
 #endif // _MOTLIB_H
