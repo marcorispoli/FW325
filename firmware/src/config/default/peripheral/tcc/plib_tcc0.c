@@ -66,7 +66,7 @@ void TCC0_PWMInitialize(void)
         /* Wait for sync */
     }
     /* Clock prescaler */
-    TCC0_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV1024 ;
+    TCC0_REGS->TCC_CTRLA = TCC_CTRLA_PRESCALER_DIV16 ;
     TCC0_REGS->TCC_WEXCTRL = TCC_WEXCTRL_OTMX(2UL);
     /* Dead time configurations */
     TCC0_REGS->TCC_WEXCTRL |= TCC_WEXCTRL_DTIEN0_Msk | TCC_WEXCTRL_DTIEN1_Msk | TCC_WEXCTRL_DTIEN2_Msk | TCC_WEXCTRL_DTIEN3_Msk
@@ -81,7 +81,7 @@ void TCC0_PWMInitialize(void)
     TCC0_REGS->TCC_CC[3] = 0U;
     TCC0_REGS->TCC_CC[4] = 0U;
     TCC0_REGS->TCC_CC[5] = 0U;
-    TCC0_REGS->TCC_PER = 10000U;
+    TCC0_REGS->TCC_PER = 150U;
 
 
 

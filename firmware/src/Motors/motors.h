@@ -102,6 +102,10 @@ ext MOTOR_COMMAND_RESULTS_t  motorMoveY(int tYdm);
 ext MOTOR_COMMAND_RESULTS_t  motorMoveZ(int tZdm);
 
 /// \ingroup MOTMOD
+/// Enables/Disables the KeyStep mode
+ext bool  motorEnableKeyStepMode(unsigned char par);
+
+/// \ingroup MOTMOD
 /// aborts a pending command
 ext void motorAbort(void);
 
@@ -140,33 +144,11 @@ typedef enum{
 
 /// \ingroup MOTMOD
 /// This is the module data structure
-typedef struct{
-    bool general_enable; //!< Current status of the general enable switch 
-    bool enable_feedback;//!< Actual status of the power switch
-    bool needle_disable_feedback;//!< Actual status of the needle disable signal
+typedef struct{    
     MOTOR_MODE_t mode; //!< Current status of the motor driver mode
-    unsigned char power;//!< Current motor voltage level
-    
+    unsigned power;//!< Current motor voltage level    
     int exec_mode;//!< Current workflow
     
-    /// Sensors data structure
-    struct{
-        int x; //!< X position sensor
-        int y; //!< Y position sensor
-        int z; //!< Z position sensor
-    }sensors;
-    
-    /// Keyboard data structure
-    struct{
-        bool xp;    //!< X+ button status
-        bool xm;    //!< X- button status
-        bool yp;    //!< Y+ button status
-        bool ym;    //!< Y- button status
-        bool zp;    //!< Z+ button status
-        bool zm;    //!< X- button status
-        bool keyboard_enable;   //!< keyboard activation enable flag        
-    }keyboard;
-   
     bool abort_request;//!< abort command request flag
     
     /// data structure for the service workflow 
