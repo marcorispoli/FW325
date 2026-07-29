@@ -6,7 +6,10 @@
             <file>file:/C:/Users/m.rispoli/OneDrive%20-%20Metaltronica%20Spa/Documenti/Workspace/Git/FW/FW325/firmware/src/main.h</file>
             <file>file:/C:/Users/m.rispoli/OneDrive%20-%20Metaltronica%20Spa/Documenti/Workspace/Git/FW/FW325/firmware/src/Protocol/protocol.c</file>
             <file>file:/C:/Users/m.rispoli/OneDrive%20-%20Metaltronica%20Spa/Documenti/Workspace/Git/FW/FW325/firmware/src/Motors/motors.c</file>
+            <file>file:/C:/Users/m.rispoli/OneDrive%20-%20Metaltronica%20Spa/Documenti/Workspace/Git/FW/FW325/firmware/src/config/default/peripheral/adc/plib_adc0.c</file>
+            <file>file:/C:/Users/m.rispoli/OneDrive%20-%20Metaltronica%20Spa/Documenti/Workspace/Git/FW/FW325/firmware/src/Motors/motors.h</file>
             <file>file:/C:/Users/m.rispoli/OneDrive%20-%20Metaltronica%20Spa/Documenti/Workspace/Git/FW/FW325/firmware/src/main.c</file>
+            <file>file:/C:/Users/m.rispoli/OneDrive%20-%20Metaltronica%20Spa/Documenti/Workspace/Git/FW/FW325/firmware/src/Shared/CAN/MET_can_protocol.c</file>
         </group>
     </open-files>
 </project-private>

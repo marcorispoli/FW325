@@ -61,9 +61,6 @@ typedef enum{
 /// this is the routine to be called every 7.8 ms in the main loop 
 ext void motorLoop(void);
 
-/// \ingroup MOTMOD
-/// this is the routine to be called every 1 second from the main loop
-ext void motor1sLoop(void);
 
 /// \ingroup MOTMOD
 /// this is the module initialization routine
@@ -91,15 +88,15 @@ ext bool motorServiceTestCycle(void);
 
 /// \ingroup MOTMOD
 /// activates the X to a target
-ext MOTOR_COMMAND_RESULTS_t  motorMoveX(int tXdm);
+ext MOTOR_COMMAND_RESULTS_t  motorMoveX(int tXdm, bool protocol, bool key_request);
 
 /// \ingroup MOTMOD
 /// activates the Y to a target
-ext MOTOR_COMMAND_RESULTS_t  motorMoveY(int tYdm);
+ext MOTOR_COMMAND_RESULTS_t  motorMoveY(int tYdm, bool protocol, bool key_request);
 
 /// \ingroup MOTMOD
 /// activates the Z to a target
-ext MOTOR_COMMAND_RESULTS_t  motorMoveZ(int tZdm);
+ext MOTOR_COMMAND_RESULTS_t  motorMoveZ(int tZdm, bool protocol, bool key_request);
 
 /// \ingroup MOTMOD
 /// Enables/Disables the KeyStep mode
@@ -149,7 +146,8 @@ typedef struct{
     unsigned power;//!< Current motor voltage level    
     int exec_mode;//!< Current workflow
     
-    bool abort_request;//!< abort command request flag
+    int key_timer; //!< Generic Timer to handle the keyboard chage status
+    
     
     /// data structure for the service workflow 
     struct{
@@ -160,13 +158,23 @@ typedef struct{
     /// data structure for the command workflow 
     struct{
       MOTOR_COMMAND_t command;  
-      int sequence;
-      int tx, ty, tz; //!< Targets
+      int  sequence;
+      int  target;              //!< Target position for the pending activaion
+      
+      bool protocol_activation; //!< The command is initiated by the CAN protocol
+      bool key_requested;       //!< The activation requires the button pressed
+      bool abort_request;       //!< abort command request flag
+      int min_power;            //!< Minimum value of the power usable during the activation
+      int activation_timer;     //!< Time since the command beginning
+      int activation_timeout;   //!< Sets the whole activation timeout
+      bool termination_fase;    //!< Command Termination management
+      int termination_timer;    //!< Time to let the motor to hold the position
     }command_mode;
     
 }MOTORS_t;
 
 ext MOTORS_t motorStruct; 
+
 
 
 #endif // _MOTLIB_H

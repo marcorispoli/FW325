@@ -127,7 +127,6 @@ int main ( void )
         
         if(trigger_time & _1024_ms_TriggerTime){
             trigger_time &=~ _1024_ms_TriggerTime;            
-            motor1sLoop();         
             MotorPowerSupplyDetection();
             VITALITY_LED_Toggle(); 
         }        
@@ -154,6 +153,10 @@ int main ( void )
             YFlipDetection();
             KeyboardHandler();
             
+            // Updates the sensors
+            GetX();
+            GetY();
+            GetZ();
         }
         
     }
@@ -346,6 +349,78 @@ void GetSHSensor(){
     if(val<0) val = 0;
     StatusZPositionRegister.SL = (unsigned char) (val & 0x00FF);
     StatusZPositionRegister.SH = (unsigned char) ((val >> 8) & 0x00FF);     
+    return;
+}
+
+/**
+ * \ingroup MOTMOD
+ * 
+ * This function converts the X position sensor 
+ * and convert it into the position units.
+ * 
+ * The position shall be calibrated with the hardware trimmers on the board.
+ * According with the ADC0 module setting, the routine takes about 7us to completes.
+ */
+void GetX(void){
+    
+    ADC0_ChannelSelect( ADC_POSINPUT_AIN5, ADC_NEGINPUT_GND );
+    ADC0_ConversionStart();
+    while(!ADC0_ConversionStatusGet());
+    deviceStruct.sensors.x = (int) ADC0_ConversionResultGet() - 50;
+    deviceStruct.pointer.pos = deviceStruct.pointer.xdm = X_To_dm(deviceStruct.sensors.x);
+    
+    int val = deviceStruct.pointer.xdm;
+    if(val<0) val = 0;
+    StatusXYPositionRegister.XL = (unsigned char) (val & 0x00FF);
+    StatusXYPositionRegister.XH = (unsigned char) ((val >> 8) & 0x00FF);
+    
+    return;
+}
+
+/**
+ * \ingroup MOTMOD
+ * This function converts the Y position sensor 
+ * and convert it into the position units.
+ * 
+ * The position shall be calibrated with the hardware trimmers on the board.
+ * According with the ADC0 module setting, the routine takes about 7us to completes. 
+ */
+void GetY(void){
+    
+    ADC0_ChannelSelect( ADC_POSINPUT_AIN6, ADC_NEGINPUT_GND );
+    ADC0_ConversionStart();
+    while(!ADC0_ConversionStatusGet());
+    deviceStruct.sensors.y = (int) ADC0_ConversionResultGet() - 50;
+    deviceStruct.pointer.pos = deviceStruct.pointer.ydm = Y_To_dm(deviceStruct.sensors.y);
+    
+    int val = deviceStruct.pointer.ydm;
+    if(val<0) val = 0;
+    StatusXYPositionRegister.YL = (unsigned char) (val & 0x00FF);
+    StatusXYPositionRegister.YH = (unsigned char) ((val >> 8) & 0x00FF);
+    
+    return;
+}
+
+/**
+ * \ingroup MOTMOD
+ * This function converts the Z position sensor 
+ * and convert it into the position units.
+ * 
+ * The position shall be calibrated with the hardware trimmers on the board.
+ * According with the ADC0 module setting, the routine takes about 7us to completes.
+ */
+void GetZ(void){    
+    ADC0_ChannelSelect( ADC_POSINPUT_AIN7, ADC_NEGINPUT_GND );
+    ADC0_ConversionStart();
+    while(!ADC0_ConversionStatusGet());    
+    deviceStruct.sensors.z = (int) ADC0_ConversionResultGet() - 50;
+    deviceStruct.pointer.pos = deviceStruct.pointer.zdm = Z_To_dm(deviceStruct.sensors.z);
+    
+    int  val = deviceStruct.pointer.zdm;
+    if(val<0) val = 0;
+    StatusZPositionRegister.ZL = (unsigned char) (val & 0x00FF);
+    StatusZPositionRegister.ZH = (unsigned char) ((val >> 8) & 0x00FF);
+    
     return;
 }
 

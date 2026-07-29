@@ -75,7 +75,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
          * 
          */   
         case MET_COMMAND_ABORT:  // This is the Library mandatory 
-            motorStruct.abort_request = true;
+            motorAbort();
             MET_Can_Protocol_returnCommandAborted();              
             break;
         
@@ -188,7 +188,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
          * 
          */
         case CMD_MOVE_X:
-            switch(motorMoveX((int) d0 + (int) d1 * 256)){
+            switch(motorMoveX((int) d0 + (int) d1 * 256,true,false)){
                 
                 /// \addtogroup CANPROT
                 /// \test Already-in-target: ImmediateExecuted(XL,XH)
@@ -250,7 +250,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
          * 
          */
         case CMD_MOVE_Y:
-            switch(motorMoveY((int) d0 + (int) d1 * 256)){
+            switch(motorMoveY((int) d0 + (int) d1 * 256,true,false)){
                 
                 /// \addtogroup CANPROT
                 /// \test Already-in-target: ImmediateExecuted(YL,YH)
@@ -312,7 +312,7 @@ void ApplicationProtocolCommandHandler(uint8_t cmd, uint8_t d0,uint8_t d1,uint8_
          * 
          */
         case CMD_MOVE_Z:
-            switch(motorMoveZ((int) d0 + (int) d1 * 256)){
+            switch(motorMoveZ((int) d0 + (int) d1 * 256,true,false)){
                 
                 /// \addtogroup CANPROT
                 /// \test Already-in-target: ImmediateExecuted(ZL,ZH)

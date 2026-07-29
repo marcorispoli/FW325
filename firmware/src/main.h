@@ -15,6 +15,35 @@
     #define ext_static extern
 #endif
 
+/**
+ * # X-AXES PEROFORMANCES
+ * 
+ * Unit conversion: 1 unit = 0.1 mm. 
+ *  
+ */
+#define Xdm_To_Units(dm) (int) ((dm) * 1 )
+#define X_To_dm(u) (int) (u) 
+#define DEFAULT_BUTTON_X_TRAVEL_dm 2500
+
+/**
+ * # X-AXES PEROFORMANCES
+ * 
+ * Unit conversion: 2.5 unit = 0.1 mm. 
+ *  
+ */
+#define Ydm_To_Units(dm) (int) (((dm) * 25) / 10 )
+#define Y_To_dm(u) (int) (u) * 10 / 25
+#define DEFAULT_BUTTON_Y_TRAVEL_dm 600
+
+/**
+ * # Z-AXES PEROFORMANCES
+ * 
+ * Unit conversion: 2 unit = 0.1 mm. 
+ *  
+ */
+#define Zdm_To_Units(dm) (int) ((dm) * 2 )
+#define Z_To_dm(u) (int) (u) / 2
+#define DEFAULT_BUTTON_Z_TRAVEL_dm 1000
 
 
 /// \ingroup MOTMOD
@@ -35,6 +64,13 @@ typedef struct{
         int power_supply;//!< Current motor voltage level
     }sensors;
     
+    struct{
+        int xdm; //!< X position sensor
+        int ydm; //!< Y position sensor
+        int zdm; //!< Z position sensor
+        int pos; //!< This is the last coordinate read
+    }pointer;
+    
     /// Keyboard data structure
     struct{
         struct{
@@ -51,7 +87,8 @@ typedef struct{
             bool keyboard_enable_stat;   //!< keyboard activation enable flag       
             bool keystep;   //!< key step mode enable flag
             bool key_present;            
-        }flags;        
+        }flags;     
+        
     }keyboard;
    
     // YUP
@@ -73,5 +110,8 @@ ext DEVICE_t deviceStruct;
 ext void SetKeyMode(bool enable, bool step_mode);
 ext void SetPowerSwitchStat(bool stat);
 ext void BuzzerSet(int pulses, int ton, int toff);
+ext void GetX(void);
+ext void GetY(void);
+ext void GetZ(void);
 
 #endif // _MOTLIB_H
