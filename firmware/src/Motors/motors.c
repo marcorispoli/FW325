@@ -13,12 +13,15 @@
 
 #define MOTOR_CALIB_MODE_KEEP_ALIVE_7ms 8561 
 
+#define MOTOR_X_TIMEOUT 2000 // 15 seconds
+#define MOTOR_Y_TIMEOUT 1200 // 8 seconds
+#define MOTOR_Z_TIMEOUT 2000 // 15 seconds
 
 // Change Working mode request from other sources
 bool change_mode_request = false;
 int change_mode;
 
-#define MAX_Z_POSITION_dm 1350
+#define MAX_Z_POSITION_dm 1450
 #define MAX_X_POSITION_dm 2580
 #define MAX_Y_POSITION_dm 700
 
@@ -675,7 +678,7 @@ MOTOR_COMMAND_RESULTS_t  motorMoveX(int tXdm, bool protocol, bool key_request){
    // Upgrade the position and checks if already in position
     GetX();
     int distance = abs(deviceStruct.pointer.xdm - tXdm);
-    if(distance < 5) return MOTOR_ALREADY_IN_POSITION;
+    if(distance < 2) return MOTOR_ALREADY_IN_POSITION;
     
     // Command accepted
     motorStruct.command_mode.command = MOTOR_COMMAND_X;
@@ -688,9 +691,11 @@ MOTOR_COMMAND_RESULTS_t  motorMoveX(int tXdm, bool protocol, bool key_request){
     motorStruct.command_mode.min_power = 0;
     motorStruct.command_mode.termination_fase = false;
     motorStruct.command_mode.termination_timer = MOTOR_HOLD_TIME;
+    motorStruct.command_mode.termination_success = false;
   
+    
     // 1dm every 7ms + 350ms
-    motorStruct.command_mode.activation_timeout = distance + 50;
+    motorStruct.command_mode.activation_timeout = MOTOR_X_TIMEOUT;
     return MOTOR_COMMAND_EXECUTING;
 }
 
@@ -704,7 +709,7 @@ MOTOR_COMMAND_RESULTS_t  motorMoveY(int tYdm, bool protocol, bool key_request){
     // Upgrade the position and checks if already in position
     GetY();    
     int distance = abs(deviceStruct.pointer.ydm - tYdm);
-    if(distance < 5) return MOTOR_ALREADY_IN_POSITION;
+    if(distance < 2) return MOTOR_ALREADY_IN_POSITION;
     
     // Command accepted
     motorStruct.command_mode.command = MOTOR_COMMAND_Y;
@@ -717,9 +722,11 @@ MOTOR_COMMAND_RESULTS_t  motorMoveY(int tYdm, bool protocol, bool key_request){
     motorStruct.command_mode.min_power = 0;
     motorStruct.command_mode.termination_fase = false;
     motorStruct.command_mode.termination_timer = MOTOR_HOLD_TIME;
+    motorStruct.command_mode.termination_success = false;
+   
    
     // 1dm every 7ms + 350ms
-    motorStruct.command_mode.activation_timeout = distance + 50;
+    motorStruct.command_mode.activation_timeout = MOTOR_Y_TIMEOUT;
     return MOTOR_COMMAND_EXECUTING;
 }
 
@@ -734,7 +741,7 @@ MOTOR_COMMAND_RESULTS_t  motorMoveZ(int tZdm, bool protocol, bool key_request){
     // Upgrade the position and checks if already in position
     GetZ();
     int distance = abs(deviceStruct.pointer.zdm - tZdm);
-    if(distance < 5) return MOTOR_ALREADY_IN_POSITION;
+    if(distance < 2) return MOTOR_ALREADY_IN_POSITION;
     
   // Command accepted
     motorStruct.command_mode.command = MOTOR_COMMAND_Z;
@@ -747,9 +754,11 @@ MOTOR_COMMAND_RESULTS_t  motorMoveZ(int tZdm, bool protocol, bool key_request){
     motorStruct.command_mode.min_power = 0;
     motorStruct.command_mode.termination_fase = false;
     motorStruct.command_mode.termination_timer = MOTOR_HOLD_TIME;
-  
+    motorStruct.command_mode.termination_success = false;
+    
+    
     // 1dm every 7ms + 350ms
-    motorStruct.command_mode.activation_timeout = distance * 2 + 50;
+    motorStruct.command_mode.activation_timeout = MOTOR_Z_TIMEOUT;
     return MOTOR_COMMAND_EXECUTING;
 }
 
@@ -802,9 +811,21 @@ void motorActivationHandler(void){
                 motorStruct.command_mode.termination_timer--;
                 if(!motorStruct.command_mode.termination_timer){
                     motorDriverOutput(MOTORS_DISABLED);
+                    
                     // Command termination here
                     motorStruct.command_mode.termination_fase = false;
-                    motorStruct.command_mode.command = MOTOR_COMMAND_NO_COMMAND;            
+                    motorStruct.command_mode.command = MOTOR_COMMAND_NO_COMMAND; 
+                    
+                    // In case of external command..
+                    if(motorStruct.command_mode.protocol_activation){
+                        if(motorStruct.command_mode.termination_success){
+                            unsigned char L = (unsigned char) (deviceStruct.pointer.pos & 0xff);
+                            unsigned char H = (unsigned char) ((deviceStruct.pointer.pos >>8) & 0xff);
+                            MET_Can_Protocol_returnCommandExecuted(L,H);                
+                        }else{
+                            MET_Can_Protocol_returnCommandError(motorStruct.command_mode.termination_error);
+                        }
+                    }            
                 }
             }
             
@@ -829,7 +850,9 @@ void motorActivationHandler(void){
         // External Abort Request
         if(motorStruct.command_mode.abort_request){
             motorStruct.command_mode.termination_fase = true;
-            if(motorStruct.command_mode.protocol_activation) MET_Can_Protocol_returnCommandAborted();
+            motorStruct.command_mode.termination_success = false;
+            motorStruct.command_mode.termination_error = MET_CAN_COMMAND_ABORT_CODE;
+            //if(motorStruct.command_mode.protocol_activation) MET_Can_Protocol_returnCommandAborted();
             BuzzerSet(5,5,5);
             MotorCommandPositionHold();
             return;
@@ -839,7 +862,22 @@ void motorActivationHandler(void){
         if(motorStruct.command_mode.key_requested){
             if(!deviceStruct.keyboard.flags.key_present){ 
                 motorStruct.command_mode.termination_fase = true;
-                if(motorStruct.command_mode.protocol_activation) MET_Can_Protocol_returnCommandAborted();
+                motorStruct.command_mode.termination_success = false;
+                motorStruct.command_mode.termination_error = MOTOR_ERROR_KEY_RELEASED;
+                
+                BuzzerSet(2,5,5);
+                MotorCommandPositionHold();
+                return;
+            }
+        }
+        
+         // Checks if the button is not pressed (if the button is not required)
+        if(!motorStruct.command_mode.key_requested){
+            if(deviceStruct.keyboard.flags.key_present){ 
+                motorStruct.command_mode.termination_fase = true;
+                motorStruct.command_mode.termination_success = false;
+                motorStruct.command_mode.termination_error = MOTOR_ERROR_KEY_PRESSED;
+                
                 BuzzerSet(2,5,5);
                 MotorCommandPositionHold();
                 return;
@@ -857,7 +895,9 @@ void motorActivationHandler(void){
                 }else{
                     // Obstacle Detected
                     motorStruct.command_mode.termination_fase = true;
-                    if(motorStruct.command_mode.protocol_activation) MET_Can_Protocol_returnCommandAborted();
+                    motorStruct.command_mode.termination_success = false;
+                    motorStruct.command_mode.termination_error = MOTOR_ERROR_OBSTACLE;
+                    
                     BuzzerSet(3,5,5);
                     MotorCommandPositionHold();
                     return;
@@ -871,7 +911,9 @@ void motorActivationHandler(void){
         // Test the Activation timeout
         if(motorStruct.command_mode.activation_timer > motorStruct.command_mode.activation_timeout) {
            motorStruct.command_mode.termination_fase = true;
-           if(motorStruct.command_mode.protocol_activation) MET_Can_Protocol_returnCommandAborted();
+           motorStruct.command_mode.termination_success = false;
+           motorStruct.command_mode.termination_error = MOTOR_ERROR_TIMEOUT;
+           
            BuzzerSet(4,5,5);
            MotorCommandPositionHold();
            return;
@@ -886,12 +928,14 @@ void motorActivationHandler(void){
          
             MotorCommandPositionHold();
             
-            motorStruct.command_mode.termination_fase = true;                    
+            motorStruct.command_mode.termination_fase = true;   
+            motorStruct.command_mode.termination_success = true;
+            /*
             if(motorStruct.command_mode.protocol_activation){
                 unsigned char L = (unsigned char) (deviceStruct.pointer.pos & 0xff);
                 unsigned char H = (unsigned char) ((deviceStruct.pointer.pos >>8) & 0xff);
                 MET_Can_Protocol_returnCommandExecuted(L,H);                
-            }
+            }*/
             BuzzerSet(1,10,10);
             return;
                       

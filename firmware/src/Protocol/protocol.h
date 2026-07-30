@@ -350,7 +350,13 @@ typedef enum{
 }PROTOCOL_COMMANDS_t;
     
         
-
+typedef enum{
+    MOTOR_ERROR_OBSTACLE = MET_CAN_COMMAND_APPLICATION_ERRORS,      
+    MOTOR_ERROR_TIMEOUT,      
+    MOTOR_ERROR_KEY_RELEASED,      
+    MOTOR_ERROR_KEY_PRESSED,
+            
+}PROTOCOL_APPLICATION_ERROR_t;
 
          
 

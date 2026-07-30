@@ -169,6 +169,8 @@ typedef struct{
       int activation_timeout;   //!< Sets the whole activation timeout
       bool termination_fase;    //!< Command Termination management
       int termination_timer;    //!< Time to let the motor to hold the position
+      bool termination_success; //!< The completion result of the last activation command
+      unsigned char termination_error;//!< In case of error this is the error code
     }command_mode;
     
 }MOTORS_t;
